@@ -21,6 +21,7 @@ pt:
   time:
     formats:        
       default: "%A, %d de %B de %Y, %H:%Mh"
+      time: "%H:%M"
       short: "%d/%m, %H:%M hs"
       long: "%A, %d de %B de %Y, %H:%Mh"
     am: ''
@@ -166,7 +167,7 @@ pt:
   mail_body_account_information_external: "Pode utilizar a conta {{value}} para autenticar-se."
   mail_body_account_information: Informação da sua conta
   mail_subject_account_activation_request: "Pedido de activação da conta {{value}}"
-  mail_body_account_activation_request: "Um novo utilizador ({{value}}) registou-se. A sua conta está à espera de aprovação:'"
+  mail_body_account_activation_request: "Um novo utilizador ({{value}}) registou-se. A sua conta está à espera de aprovação:"
   mail_subject_reminder: "{{count}} tarefa(s) para entregar nos próximos dias"
   mail_body_reminder: "{{count}} tarefa(s) que estão atribuídas a si estão agendadas para estarem completas nos próximos {{days}} dias:"
   
@@ -235,7 +236,7 @@ pt:
   field_attr_mail: Atributo e-mail
   field_onthefly: Criação de utilizadores na hora
   field_start_date: Início
-  field_done_ratio: %% Completo
+  field_done_ratio: % Completo
   field_auth_source: Modo de autenticação
   field_hide_mail: Esconder endereço de e-mail
   field_comments: Comentário
@@ -600,7 +601,7 @@ pt:
   label_registration_activation_by_email: Activação da conta por e-mail
   label_registration_manual_activation: Activação manual da conta
   label_registration_automatic_activation: Activação automática da conta
-  label_display_per_page: "Por página: {{value}}'"
+  label_display_per_page: "Por página: {{value}}"
   label_age: Idade
   label_change_properties: Mudar propriedades
   label_general: Geral
@@ -666,7 +667,7 @@ pt:
   text_regexp_info: ex. ^[A-Z0-9]+$
   text_min_max_length_info: 0 siginifica sem restrição
   text_project_destroy_confirmation: Tem a certeza que deseja apagar o projecto e todos os dados relacionados?
-  text_subprojects_destroy_warning: "O(s) seu(s) sub-projecto(s): {{value}} também será/serão apagado(s).'"
+  text_subprojects_destroy_warning: "O(s) seu(s) sub-projecto(s): {{value}} também será/serão apagado(s)."
   text_workflow_edit: Seleccione um papel e um tipo de tarefa para editar o workflow
   text_are_you_sure: Tem a certeza?
   text_journal_changed: "mudado de {{old}} para {{new}}"
@@ -702,8 +703,8 @@ pt:
   text_destroy_time_entries: Apagar as horas
   text_assign_time_entries_to_project: Atribuir as horas ao projecto
   text_reassign_time_entries: 'Re-atribuir as horas para esta tarefa:'
-  text_user_wrote: "{{value}} escreveu:'"
-  text_enumeration_destroy_question: "{{count}} objectos estão atribuídos a este valor.'"
+  text_user_wrote: "{{value}} escreveu:"
+  text_enumeration_destroy_question: "{{count}} objectos estão atribuídos a este valor."
   text_enumeration_category_reassign_to: 'Re-atribuí-los para este valor:'
   text_email_delivery_not_configured: "Entrega por e-mail não está configurada, e as notificação estão desactivadas.\nConfigure o seu servidor de SMTP em config/email.yml e reinicie a aplicação para activar estas funcionalidades."
   
@@ -795,3 +796,15 @@ pt:
   label_display: Display
   field_editable: Editable
   setting_repository_log_display_limit: Maximum number of revisions displayed on file log
+  setting_file_max_size_displayed: Max size of text files displayed inline
+  field_watcher: Watcher
+  setting_openid: Allow OpenID login and registration
+  field_identity_url: OpenID URL
+  label_login_with_open_id_option: or login with OpenID
+  field_content: Content
+  label_descending: Descending
+  label_sort: Sort
+  label_ascending: Ascending
+  label_date_from_to: From {{start}} to {{end}}
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=

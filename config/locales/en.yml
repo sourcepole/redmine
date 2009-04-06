@@ -4,7 +4,7 @@ en:
       # Use the strftime parameters for formats.
       # When no format has been given, it uses default.
       # You can provide other formats here if you like!
-      default: "%Y-%m-%d"
+      default: "%m/%d/%Y"
       short: "%b %d"
       long: "%B %d, %Y"
       
@@ -19,7 +19,8 @@ en:
 
   time:
     formats:
-      default: "%a, %d %b %Y %H:%M:%S %z"
+      default: "%m/%d/%Y %I:%M %p"
+      time: "%I:%M %p"
       short: "%d %b %H:%M"
       long: "%B %d, %Y %H:%M"
     am: "am"
@@ -145,7 +146,7 @@ en:
   mail_body_account_information_external: "You can use your {{value}} account to log in."
   mail_body_account_information: Your account information
   mail_subject_account_activation_request: "{{value}} account activation request"
-  mail_body_account_activation_request: "A new user ({{value}}) has registered. The account is pending your approval:'"
+  mail_body_account_activation_request: "A new user ({{value}}) has registered. The account is pending your approval:"
   mail_subject_reminder: "{{count}} issue(s) due in the next days"
   mail_body_reminder: "{{count}} issue(s) that are assigned to you are due in the next {{days}} days:"
   
@@ -214,7 +215,7 @@ en:
   field_attr_mail: Email attribute
   field_onthefly: On-the-fly user creation
   field_start_date: Start
-  field_done_ratio: %% Done
+  field_done_ratio: % Done
   field_auth_source: Authentication mode
   field_hide_mail: Hide my email address
   field_comments: Comment
@@ -238,6 +239,9 @@ en:
   field_comments_sorting: Display comments
   field_parent_title: Parent page
   field_editable: Editable
+  field_watcher: Watcher
+  field_identity_url: OpenID URL
+  field_content: Content
   
   setting_app_title: Application title
   setting_app_subtitle: Application subtitle
@@ -278,7 +282,9 @@ en:
   setting_sequential_project_identifiers: Generate sequential project identifiers
   setting_gravatar_enabled: Use Gravatar user icons
   setting_diff_max_lines_displayed: Max number of diff lines displayed
+  setting_file_max_size_displayed: Max size of text files displayed inline
   setting_repository_log_display_limit: Maximum number of revisions displayed on file log
+  setting_openid: Allow OpenID login and registration
   
   permission_edit_project: Edit project
   permission_select_project_modules: Select project modules
@@ -387,6 +393,7 @@ en:
   label_information_plural: Information
   label_please_login: Please log in
   label_register: Register
+  label_login_with_open_id_option: or login with OpenID
   label_password_lost: Lost password
   label_home: Home
   label_my_page: My page
@@ -504,6 +511,8 @@ en:
   label_not_equals: is not
   label_in_less_than: in less than
   label_in_more_than: in more than
+  label_greater_or_equal: '>='
+  label_less_or_equal: '<='
   label_in: in
   label_today: today
   label_all_time: all time
@@ -635,7 +644,7 @@ en:
   label_registration_activation_by_email: account activation by email
   label_registration_manual_activation: manual account activation
   label_registration_automatic_activation: automatic account activation
-  label_display_per_page: "Per page: {{value}}'"
+  label_display_per_page: "Per page: {{value}}"
   label_age: Age
   label_change_properties: Change properties
   label_general: General
@@ -655,6 +664,10 @@ en:
   label_issue_watchers: Watchers
   label_example: Example
   label_display: Display
+  label_sort: Sort
+  label_ascending: Ascending
+  label_descending: Descending
+  label_date_from_to: From {{start}} to {{end}}
   
   button_login: Login
   button_submit: Submit
@@ -704,7 +717,7 @@ en:
   text_regexp_info: eg. ^[A-Z0-9]+$
   text_min_max_length_info: 0 means no restriction
   text_project_destroy_confirmation: Are you sure you want to delete this project and related data ?
-  text_subprojects_destroy_warning: "Its subproject(s): {{value}} will be also deleted.'"
+  text_subprojects_destroy_warning: "Its subproject(s): {{value}} will be also deleted."
   text_workflow_edit: Select a role and a tracker to edit the workflow
   text_are_you_sure: Are you sure ?
   text_journal_changed: "changed from {{old}} to {{new}}"
@@ -741,8 +754,8 @@ en:
   text_destroy_time_entries: Delete reported hours
   text_assign_time_entries_to_project: Assign reported hours to the project
   text_reassign_time_entries: 'Reassign reported hours to this issue:'
-  text_user_wrote: "{{value}} wrote:'"
-  text_enumeration_destroy_question: "{{count}} objects are assigned to this value.'"
+  text_user_wrote: "{{value}} wrote:"
+  text_enumeration_destroy_question: "{{count}} objects are assigned to this value."
   text_enumeration_category_reassign_to: 'Reassign them to this value:'
   text_email_delivery_not_configured: "Email delivery is not configured, and notifications are disabled.\nConfigure your SMTP server in config/email.yml and restart the application to enable them."
   text_repository_usernames_mapping: "Select or update the Redmine user mapped to each username found in the repository log.\nUsers with the same Redmine and repository username or email are automatically mapped."

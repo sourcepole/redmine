@@ -63,6 +63,19 @@ class IssueTest < Test::Unit::TestCase
     assert_equal 'PostgreSQL', issue.custom_value_for(field).value
   end
   
+  def test_errors_full_messages_should_include_custom_fields_errors
+    field = IssueCustomField.find_by_name('Database')
+    
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :subject => 'test_create', :description => 'IssueTest#test_create_with_required_custom_field')
+    assert issue.available_custom_fields.include?(field)
+    # Invalid value
+    issue.custom_field_values = { field.id => 'SQLServer' }
+    
+    assert !issue.valid?
+    assert_equal 1, issue.errors.full_messages.size
+    assert_equal "Database #{I18n.translate('activerecord.errors.messages.inclusion')}", issue.errors.full_messages.first
+  end
+  
   def test_update_issue_with_required_custom_field
     field = IssueCustomField.find_by_name('Database')
     field.update_attribute(:is_required, true)
@@ -227,5 +240,13 @@ class IssueTest < Test::Unit::TestCase
     assert !Issue.new(:due_date => 1.day.from_now.to_date).overdue?
     assert !Issue.new(:due_date => nil).overdue?
     assert !Issue.new(:due_date => 1.day.ago.to_date, :status => IssueStatus.find(:first, :conditions => {:is_closed => true})).overdue?
+  end
+  
+  def test_create_should_send_email_notification
+    ActionMailer::Base.deliveries.clear
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => Enumeration.priorities.first, :subject => 'test_create', :estimated_hours => '1:30')
+
+    assert issue.save
+    assert_equal 1, ActionMailer::Base.deliveries.size
   end
 end

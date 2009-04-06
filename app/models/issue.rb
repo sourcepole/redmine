@@ -54,6 +54,8 @@ class Issue < ActiveRecord::Base
   named_scope :visible, lambda {|*args| { :include => :project,
                                           :conditions => Project.allowed_to_condition(args.first || User.current, :view_issues) } }
   
+  named_scope :open, :conditions => ["#{IssueStatus.table_name}.is_closed = ?", false], :include => :status
+  
   # Returns true if usr or current user is allowed to view the issue
   def visible?(usr=nil)
     (usr || User.current).allowed_to?(:view_issues, self.project)
@@ -155,7 +157,7 @@ class Issue < ActiveRecord::Base
   def before_save  
     if @current_journal
       # attributes changes
-      (Issue.column_names - %w(id description)).each {|c|
+      (Issue.column_names - %w(id description lock_version created_on updated_on)).each {|c|
         @current_journal.details << JournalDetail.new(:property => 'attr',
                                                       :prop_key => c,
                                                       :old_value => @issue_before_change.send(c),
@@ -239,6 +241,11 @@ class Issue < ActiveRecord::Base
     recipients.compact.uniq
   end
   
+  # Returns the total number of hours spent on this issue.
+  #
+  # Example:
+  #   spent_hours => 0
+  #   spent_hours => 50
   def spent_hours
     @spent_hours ||= time_entries.sum(:hours) || 0
   end
@@ -267,6 +274,11 @@ class Issue < ActiveRecord::Base
     due_date || (fixed_version ? fixed_version.effective_date : nil)
   end
   
+  # Returns the time scheduled for this issue.
+  # 
+  # Example:
+  #   Start Date: 2/26/09, End Date: 3/04/09
+  #   duration => 6
   def duration
     (start_date && due_date) ? due_date - start_date : 0
   end

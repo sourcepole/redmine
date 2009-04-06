@@ -32,6 +32,7 @@ ru:
   time:
     formats:
       default: "%a, %d %b %Y, %H:%M:%S %z"
+      time: "%H:%M"
       short: "%d %b, %H:%M"
       long: "%d %B %Y, %H:%M"
 
@@ -295,7 +296,7 @@ ru:
   field_default_value: Значение по умолчанию
   field_delay: Отложить
   field_description: Описание
-  field_done_ratio: Готовность в %%
+  field_done_ratio: Готовность в %
   field_downloads: Загрузки
   field_due_date: Дата выполнения
   field_effective_date: Дата
@@ -426,17 +427,17 @@ ru:
   label_closed_issues_plural: закрыто
   label_closed_issues: закрыт
   label_x_open_issues_abbr_on_total:
-    zero:  0 open / {{total}}
-    one:   1 open / {{total}}
-    other: "{{count}} open / {{total}}"
+    zero:  0 открыто / {{total}}
+    one:   1 открыт / {{total}}
+    other: "{{count}} открыто / {{total}}"
   label_x_open_issues_abbr:
-    zero:  0 open
-    one:   1 open
-    other: "{{count}} open"
+    zero:  0 открыто
+    one:   1 открыт
+    other: "{{count}} открыто"
   label_x_closed_issues_abbr:
-    zero:  0 closed
-    one:   1 closed
-    other: "{{count}} closed"
+    zero:  0 закрыто
+    one:   1 закрыт
+    other: "{{count}} закрыто"
   label_comment_added: Добавленный комментарий
   label_comment_add: Оставить комментарий
   label_comment_delete: Удалить комментарии
@@ -471,7 +472,7 @@ ru:
   label_diff_inline: вставкой
   label_diff_side_by_side: рядом
   label_disabled: отключено
-  label_display_per_page: "На страницу: {{value}}'"
+  label_display_per_page: "На страницу: {{value}}"
   label_document_added: Документ добавлен
   label_document_new: Новый документ
   label_document_plural: Документы
@@ -642,7 +643,7 @@ ru:
   label_reverse_chronological_order: В обратном порядке
   label_revision_plural: Редакции
   label_revision: Редакция
-  label_roadmap_due_in: "Вовремя {{value}}"
+  label_roadmap_due_in: "В срок {{value}}"
   label_roadmap_no_issues: Нет задач для данной версии
   label_roadmap_overdue: "{{value}} опоздание"
   label_roadmap: Оперативный план
@@ -709,7 +710,7 @@ ru:
   label_year: Год
   label_yesterday: вчера
   
-  mail_body_account_activation_request: "Зарегистрирован новый пользователь ({{value}}). Учетная запись ожидает Вашего утверждения:'"
+  mail_body_account_activation_request: "Зарегистрирован новый пользователь ({{value}}). Учетная запись ожидает Вашего утверждения:"
   mail_body_account_information_external: "Вы можете использовать Вашу {{value}} учетную запись для входа."
   mail_body_account_information: Информация о Вашей учетной записи
   mail_body_lost_password: 'Для изменения пароля зайдите по следующей ссылке:'
@@ -858,7 +859,7 @@ ru:
   text_diff_truncated: '... Этот diff ограничен, так как превышает максимальный отображаемый размер.'
   text_email_delivery_not_configured: "Параметры работы с почтовым сервером не настроены и функция уведомления по email не активна.\nНастроить параметры для Вашего SMTP-сервера Вы можете в файле config/email.yml. Для применения изменений перезапустите приложение."
   text_enumeration_category_reassign_to: 'Назначить им следующее значение:'
-  text_enumeration_destroy_question: "{{count}} объект(а,ов) связаны с этим значением.'"
+  text_enumeration_destroy_question: "{{count}} объект(а,ов) связаны с этим значением."
   text_file_repository_writable: Хранилище с доступом на запись
   text_issue_added: "По задаче {{id}} был создан отчет ({{author}})."
   text_issue_category_destroy_assignments: Удалить назначения категории
@@ -883,14 +884,14 @@ ru:
   text_select_mail_notifications: Выберите действия, на которые будет отсылаться уведомление на электронную почту.
   text_select_project_modules: 'Выберите модули, которые будут использованы в проекте:'
   text_status_changed_by_changeset: "Реализовано в {{value}} редакции."
-  text_subprojects_destroy_warning: "Подпроекты: {{value}} также будут удалены.'"
+  text_subprojects_destroy_warning: "Подпроекты: {{value}} также будут удалены."
   text_tip_task_begin_day: дата начала задачи
   text_tip_task_begin_end_day: начало задачи и окончание ее в этот день
   text_tip_task_end_day: дата завершения задачи
   text_tracker_no_workflow: Для этого трекера последовательность действий не определена
   text_unallowed_characters: Запрещенные символы
   text_user_mail_option: "Для невыбранных проектов, Вы будете получать уведомления только о том что просматриваете или в чем участвуете (например, вопросы, автором которых Вы являетесь или которые Вам назначены)."
-  text_user_wrote: "{{value}} написал(а):'"
+  text_user_wrote: "{{value}} написал(а):"
   text_wiki_destroy_confirmation: Вы уверены, что хотите удалить данную Wiki и все ее содержимое?
   text_workflow_edit: Выберите роль и трекер для редактирования последовательности состояний
   
@@ -902,3 +903,15 @@ ru:
   field_editable: Редактируемый
   
   setting_repository_log_display_limit: Maximum number of revisions displayed on file log
+  setting_file_max_size_displayed: Max size of text files displayed inline
+  field_watcher: Watcher
+  setting_openid: Allow OpenID login and registration
+  field_identity_url: OpenID URL
+  label_login_with_open_id_option: or login with OpenID
+  field_content: Content
+  label_descending: Descending
+  label_sort: Sort
+  label_ascending: Ascending
+  label_date_from_to: From {{start}} to {{end}}
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=

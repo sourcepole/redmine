@@ -193,8 +193,8 @@ ActionController::Routing::Routes.draw do |map|
     projects.with_options :action => 'activity', :conditions => {:method => :get} do |activity|
       activity.connect 'projects/:id/activity'
       activity.connect 'projects/:id/activity.:format'
-      activity.connect 'activity'
-      activity.connect 'activity.:format'
+      activity.connect 'activity', :id => nil
+      activity.connect 'activity.:format', :id => nil
     end
     
     projects.with_options :conditions => {:method => :post} do |project_actions|
@@ -209,19 +209,19 @@ ActionController::Routing::Routes.draw do |map|
   
   map.with_options :controller => 'repositories' do |repositories|
     repositories.with_options :conditions => {:method => :get} do |repository_views|
-      repositories.connect 'projects/:id/repository', :action => 'show'
-      repositories.connect 'projects/:id/repository/edit', :action => 'edit'
-      repositories.connect 'projects/:id/repository/statistics', :action => 'stats'
-      repositories.connect 'projects/:id/repository/revisions', :action => 'revisions'
-      repositories.connect 'projects/:id/repository/revisions.:format', :action => 'revisions'
-      repositories.connect 'projects/:id/repository/revisions/:rev', :action => 'revision'
-      repositories.connect 'projects/:id/repository/revisions/:rev/diff', :action => 'diff'
-      repositories.connect 'projects/:id/repository/revisions/:rev/diff.:format', :action => 'diff'
-      repositories.connect 'projects/:id/repository/revisions/:rev/:action/*path'
-      repositories.connect 'projects/:id/repository/:action/*path'
+      repository_views.connect 'projects/:id/repository', :action => 'show'
+      repository_views.connect 'projects/:id/repository/edit', :action => 'edit'
+      repository_views.connect 'projects/:id/repository/statistics', :action => 'stats'
+      repository_views.connect 'projects/:id/repository/revisions', :action => 'revisions'
+      repository_views.connect 'projects/:id/repository/revisions.:format', :action => 'revisions'
+      repository_views.connect 'projects/:id/repository/revisions/:rev', :action => 'revision'
+      repository_views.connect 'projects/:id/repository/revisions/:rev/diff', :action => 'diff'
+      repository_views.connect 'projects/:id/repository/revisions/:rev/diff.:format', :action => 'diff'
+      repository_views.connect 'projects/:id/repository/revisions/:rev/:action/*path'
+      repository_views.connect 'projects/:id/repository/:action/*path'
     end
     
-    repositories.connect 'projects/:id/repository/edit', :action => 'edit', :conditions => {:method => :post}
+    repositories.connect 'projects/:id/repository/:action', :conditions => {:method => :post}
   end
   
   map.connect 'attachments/:id', :controller => 'attachments', :action => 'show', :id => /\d+/

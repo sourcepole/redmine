@@ -45,8 +45,8 @@ class IssuesController < ApplicationController
 
   def index
     retrieve_query
-    sort_init 'id', 'desc'
-    sort_update({'id' => "#{Issue.table_name}.id"}.merge(@query.columns.inject({}) {|h, c| h[c.name.to_s] = c.sortable; h}))
+    sort_init(@query.sort_criteria.empty? ? [['id', 'desc']] : @query.sort_criteria)
+    sort_update({'id' => "#{Issue.table_name}.id"}.merge(@query.available_columns.inject({}) {|h, c| h[c.name.to_s] = c.sortable; h}))
     
     if @query.valid?
       limit = per_page_option
@@ -80,7 +80,7 @@ class IssuesController < ApplicationController
   def changes
     retrieve_query
     sort_init 'id', 'desc'
-    sort_update({'id' => "#{Issue.table_name}.id"}.merge(@query.columns.inject({}) {|h, c| h[c.name.to_s] = c.sortable; h}))
+    sort_update({'id' => "#{Issue.table_name}.id"}.merge(@query.available_columns.inject({}) {|h, c| h[c.name.to_s] = c.sortable; h}))
     
     if @query.valid?
       @journals = Journal.find :all, :include => [ :details, :user, {:issue => [:project, :author, :tracker, :status]} ],
@@ -98,6 +98,8 @@ class IssuesController < ApplicationController
     @journals = @issue.journals.find(:all, :include => [:user, :details], :order => "#{Journal.table_name}.created_on ASC")
     @journals.each_with_index {|j,i| j.indice = i+1}
     @journals.reverse! if User.current.wants_comments_in_reverse_order?
+    @changesets = @issue.changesets
+    @changesets.reverse! if User.current.wants_comments_in_reverse_order?
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current)
     @edit_allowed = User.current.allowed_to?(:edit_issues, @project)
     @priorities = Enumeration.priorities
@@ -118,8 +120,7 @@ class IssuesController < ApplicationController
     # Tracker must be set before custom field values
     @issue.tracker ||= @project.trackers.find((params[:issue] && params[:issue][:tracker_id]) || params[:tracker_id] || :first)
     if @issue.tracker.nil?
-      flash.now[:error] = 'No tracker is associated to this project. Please check the Project settings.'
-      render :nothing => true, :layout => true
+      render_error 'No tracker is associated to this project. Please check the Project settings.'
       return
     end
     if params[:issue].is_a?(Hash)
@@ -130,8 +131,7 @@ class IssuesController < ApplicationController
     
     default_status = IssueStatus.default
     unless default_status
-      flash.now[:error] = 'No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").'
-      render :nothing => true, :layout => true
+      render_error 'No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").'
       return
     end    
     @issue.status = default_status
@@ -146,7 +146,6 @@ class IssuesController < ApplicationController
       if @issue.save
         attach_files(@issue, params[:attachments])
         flash[:notice] = l(:notice_successful_create)
-        Mailer.deliver_issue_add(@issue) if Setting.notified_events.include?('issue_added')
         call_hook(:controller_issues_new_after_save, { :params => params, :issue => @issue})
         redirect_to(params[:continue] ? { :action => 'new', :tracker_id => @issue.tracker } :
                                         { :action => 'show', :id => @issue })
@@ -193,7 +192,6 @@ class IssuesController < ApplicationController
         if !journal.new_record?
           # Only send notification if something was actually changed
           flash[:notice] = l(:notice_successful_update)
-          Mailer.deliver_issue_edit(journal) if Setting.notified_events.include?('issue_updated')
         end
         call_hook(:controller_issues_edit_after_save, { :params => params, :issue => @issue, :time_entry => @time_entry, :journal => journal})
         redirect_to(params[:back_to] || {:action => 'show', :id => @issue})
@@ -247,10 +245,7 @@ class IssuesController < ApplicationController
         issue.custom_field_values = custom_field_values if custom_field_values && !custom_field_values.empty?
         call_hook(:controller_issues_bulk_edit_before_save, { :params => params, :issue => issue })
         # Don't save any change to the issue if the user is not authorized to apply the requested status
-        if (status.nil? || (issue.status.new_status_allowed_to?(status, current_role, issue.tracker) && issue.status = status)) && issue.save
-          # Send notification for each issue (if changed)
-          Mailer.deliver_issue_edit(journal) if journal.details.any? && Setting.notified_events.include?('issue_updated')
-        else
+        unless (status.nil? || (issue.status.new_status_allowed_to?(status, current_role, issue.tracker) && issue.status = status)) && issue.save
           # Keep unsaved issue ids to display them in flash error
           unsaved_issue_ids << issue.id
         end
@@ -471,6 +466,7 @@ private
       @query = Query.find(params[:query_id], :conditions => cond)
       @query.project = @project
       session[:query] = {:id => @query.id, :project_id => @query.project_id}
+      sort_clear
     else
       if params[:set_filter] || session[:query].nil? || session[:query][:project_id] != (@project ? @project.id : nil)
         # Give it a name, required to be valid

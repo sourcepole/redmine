@@ -28,6 +28,11 @@ class QueryColumn
   def caption
     l("field_#{name}")
   end
+  
+  # Returns true if the column is sortable, otherwise false
+  def sortable?
+    !sortable.nil?
+  end
 end
 
 class QueryCustomFieldColumn < QueryColumn
@@ -52,6 +57,7 @@ class Query < ActiveRecord::Base
   belongs_to :user
   serialize :filters
   serialize :column_names
+  serialize :sort_criteria, Array
   
   attr_protected :project_id, :user_id
   
@@ -64,8 +70,8 @@ class Query < ActiveRecord::Base
                   "c"   => :label_closed_issues,
                   "!*"  => :label_none,
                   "*"   => :label_all,
-                  ">="   => '>=',
-                  "<="   => '<=',
+                  ">="  => :label_greater_or_equal,
+                  "<="  => :label_less_or_equal,
                   "<t+" => :label_in_less_than,
                   ">t+" => :label_in_more_than,
                   "t+"  => :label_in,
@@ -92,6 +98,7 @@ class Query < ActiveRecord::Base
   cattr_reader :operators_by_filter_type
 
   @@available_columns = [
+    QueryColumn.new(:project, :sortable => "#{Project.table_name}.name"),
     QueryColumn.new(:tracker, :sortable => "#{Tracker.table_name}.position"),
     QueryColumn.new(:status, :sortable => "#{IssueStatus.table_name}.position"),
     QueryColumn.new(:priority, :sortable => "#{Enumeration.table_name}.position", :default_order => 'desc'),
@@ -236,7 +243,10 @@ class Query < ActiveRecord::Base
   
   def columns
     if has_default_columns?
-      available_columns.select {|c| Setting.issue_list_default_columns.include?(c.name.to_s) }
+      available_columns.select do |c|
+        # Adds the project column by default for cross-project lists
+        Setting.issue_list_default_columns.include?(c.name.to_s) || (c.name == :project && project.nil?)
+      end
     else
       # preserve the column_names order
       column_names.collect {|name| available_columns.find {|col| col.name == name}}.compact
@@ -255,6 +265,27 @@ class Query < ActiveRecord::Base
   
   def has_default_columns?
     column_names.nil? || column_names.empty?
+  end
+  
+  def sort_criteria=(arg)
+    c = []
+    if arg.is_a?(Hash)
+      arg = arg.keys.sort.collect {|k| arg[k]}
+    end
+    c = arg.select {|k,o| !k.to_s.blank?}.slice(0,3).collect {|k,o| [k.to_s, o == 'desc' ? o : 'asc']}
+    write_attribute(:sort_criteria, c)
+  end
+  
+  def sort_criteria
+    read_attribute(:sort_criteria) || []
+  end
+  
+  def sort_criteria_key(arg)
+    sort_criteria && sort_criteria[arg] && sort_criteria[arg].first
+  end
+  
+  def sort_criteria_order(arg)
+    sort_criteria && sort_criteria[arg] && sort_criteria[arg].last
   end
   
   def project_statement

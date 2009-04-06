@@ -215,7 +215,7 @@ fr:
   field_is_default: Valeur par défaut
   field_tracker: Tracker
   field_subject: Sujet
-  field_due_date: Date d'échéance
+  field_due_date: Echéance
   field_assigned_to: Assigné à
   field_priority: Priorité
   field_fixed_version: Version cible
@@ -247,7 +247,7 @@ fr:
   field_attr_mail: Attribut Email
   field_onthefly: Création des utilisateurs à la volée
   field_start_date: Début
-  field_done_ratio: %% Réalisé
+  field_done_ratio: % Réalisé
   field_auth_source: Mode d'authentification
   field_hide_mail: Cacher mon adresse mail
   field_comments: Commentaire
@@ -271,6 +271,9 @@ fr:
   field_comments_sorting: Afficher les commentaires
   field_parent_title: Page parent
   field_editable: Modifiable
+  field_watcher: Observateur
+  field_identity_url: URL OpenID
+  field_content: Contenu
   
   setting_app_title: Titre de l'application
   setting_app_subtitle: Sous-titre de l'application
@@ -311,7 +314,9 @@ fr:
   setting_sequential_project_identifiers: Générer des identifiants de projet séquentiels
   setting_gravatar_enabled: Afficher les Gravatar des utilisateurs
   setting_diff_max_lines_displayed: Nombre maximum de lignes de diff affichées
+  setting_file_max_size_displayed: Taille maximum des fichiers texte affichés en ligne
   setting_repository_log_display_limit: "Nombre maximum de revisions affichées sur l'historique d'un fichier"
+  setting_openid: "Autoriser l'authentification et l'enregistrement OpenID"
   
   permission_edit_project: Modifier le projet
   permission_select_project_modules: Choisir les modules
@@ -420,6 +425,7 @@ fr:
   label_information_plural: Informations
   label_please_login: Identification
   label_register: S'enregistrer
+  label_login_with_open_id_option: S'authentifier avec OpenID
   label_password_lost: Mot de passe perdu
   label_home: Accueil
   label_my_page: Ma page
@@ -688,6 +694,10 @@ fr:
   label_issue_watchers: Observateurs
   label_example: Exemple
   label_display: Affichage
+  label_sort: Tri
+  label_ascending: Croissant
+  label_descending: Décroissant
+  label_date_from_to: Du {{start}} au {{end}}
   
   button_login: Connexion
   button_submit: Soumettre
@@ -737,7 +747,7 @@ fr:
   text_regexp_info: ex. ^[A-Z0-9]+$
   text_min_max_length_info: 0 pour aucune restriction
   text_project_destroy_confirmation: Etes-vous sûr de vouloir supprimer ce projet et toutes ses données ?
-  text_subprojects_destroy_warning: "Ses sous-projets: {{value}} seront également supprimés.'"
+  text_subprojects_destroy_warning: "Ses sous-projets: {{value}} seront également supprimés."
   text_workflow_edit: Sélectionner un tracker et un rôle pour éditer le workflow
   text_are_you_sure: Etes-vous sûr ?
   text_journal_changed: "changé de {{old}} à {{new}}"
@@ -774,8 +784,8 @@ fr:
   text_destroy_time_entries: Supprimer les heures
   text_assign_time_entries_to_project: Reporter les heures sur le projet
   text_reassign_time_entries: 'Reporter les heures sur cette demande:'
-  text_user_wrote: "{{value}} a écrit:'"
-  text_enumeration_destroy_question: "Cette valeur est affectée à {{count}} objets.'"
+  text_user_wrote: "{{value}} a écrit:"
+  text_enumeration_destroy_question: "Cette valeur est affectée à {{count}} objets."
   text_enumeration_category_reassign_to: 'Réaffecter les objets à cette valeur:'
   text_email_delivery_not_configured: "L'envoi de mail n'est pas configuré, les notifications sont désactivées.\nConfigurez votre serveur SMTP dans config/email.yml et redémarrez l'application pour les activer."
   text_repository_usernames_mapping: "Vous pouvez sélectionner ou modifier l'utilisateur Redmine associé à chaque nom d'utilisateur figurant dans l'historique du dépôt.\nLes utilisateurs avec le même identifiant ou la même adresse mail seront automatiquement associés."
@@ -807,3 +817,5 @@ fr:
   enumeration_issue_priorities: Priorités des demandes
   enumeration_doc_categories: Catégories des documents
   enumeration_activities: Activités (suivi du temps)
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=

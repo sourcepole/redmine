@@ -150,17 +150,8 @@ class AccountController < ApplicationController
     redirect_to :action => 'login'
   end
   
-private
-  def logged_user=(user)
-    if user && user.is_a?(User)
-      User.current = user
-      session[:user_id] = user.id
-    else
-      User.current = User.anonymous
-      session[:user_id] = nil
-    end
-  end
-  
+  private
+
   def password_authentication
     user = User.try_to_login(params[:username], params[:password])
     if user.nil?
@@ -227,6 +218,7 @@ private
       token = Token.create(:user => user, :action => 'autologin')
       cookies[:autologin] = { :value => token.value, :expires => 1.year.from_now }
     end
+    call_hook(:controller_account_success_authentication_after, {:user => user })
     redirect_back_or_default :controller => 'my', :action => 'page'
   end
 
@@ -257,6 +249,7 @@ private
   def register_automatically(user, &block)
     # Automatic activation
     user.status = User::STATUS_ACTIVE
+    user.last_login_on = Time.now
     if user.save
       self.logged_user = user
       flash[:notice] = l(:notice_account_activated)

@@ -87,6 +87,16 @@ class MailerTest < Test::Unit::TestCase
     # restore it
     Redmine::Utils.relative_url_root = relative_url_root
   end
+  
+  def test_email_headers
+    ActionMailer::Base.deliveries.clear
+    issue = Issue.find(1)
+    Mailer.deliver_issue_add(issue)
+    mail = ActionMailer::Base.deliveries.last
+    assert_not_nil mail
+    assert_equal 'bulk', mail.header_string('Precedence')
+    assert_equal 'auto-generated', mail.header_string('Auto-Submitted')
+  end
 
   def test_plain_text_mail
     Setting.plain_text_mail = 1
@@ -207,10 +217,16 @@ class MailerTest < Test::Unit::TestCase
 
   def test_register
     token = Token.find(1)
+    Setting.host_name = 'redmine.foo'
+    Setting.protocol = 'https'
+    
     valid_languages.each do |lang|
       token.user.update_attribute :language, lang.to_s
       token.reload
+      ActionMailer::Base.deliveries.clear
       assert Mailer.deliver_register(token)
+      mail = ActionMailer::Base.deliveries.last
+      assert mail.body.include?("https://redmine.foo/account/activate?token=#{token.value}")
     end
   end
   

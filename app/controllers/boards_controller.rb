@@ -46,6 +46,7 @@ class BoardsController < ApplicationController
                                   :include => [:author, {:last_reply => :author}],
                                   :limit  =>  @topic_pages.items_per_page,
                                   :offset =>  @topic_pages.current.offset
+    @message = Message.new
     render :action => 'show', :layout => !request.xhr?
   end
   
@@ -62,12 +63,6 @@ class BoardsController < ApplicationController
 
   def edit
     if request.post? && @board.update_attributes(params[:board])
-      case params[:position]
-      when 'highest'; @board.move_to_top
-      when 'higher'; @board.move_higher
-      when 'lower'; @board.move_lower
-      when 'lowest'; @board.move_to_bottom
-      end if params[:position]
       redirect_to :controller => 'projects', :action => 'settings', :id => @project, :tab => 'boards'
     end
   end

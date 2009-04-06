@@ -38,6 +38,8 @@ module IssuesHelper
     s = "issue status-#{issue.status.position} priority-#{issue.priority.position}"
     s << ' closed' if issue.closed?
     s << ' overdue' if issue.overdue?
+    s << ' created-by-me' if User.current.logged? && issue.author_id == User.current.id
+    s << ' assigned-to-me' if User.current.logged? && issue.assigned_to_id == User.current.id
     s
   end
   
@@ -48,6 +50,7 @@ module IssuesHelper
       # Project specific queries and global queries
       visible << (@project.nil? ? ["project_id IS NULL"] : ["project_id IS NULL OR project_id = ?", @project.id])
       @sidebar_queries = Query.find(:all, 
+                                    :select => 'id, name',
                                     :order => "name ASC",
                                     :conditions => visible.conditions)
     end

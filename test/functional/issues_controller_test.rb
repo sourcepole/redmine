@@ -58,6 +58,8 @@ class IssuesControllerTest < Test::Unit::TestCase
   end
 
   def test_index
+    Setting.default_language = 'en'
+    
     get :index
     assert_response :success
     assert_template 'index.rhtml'
@@ -68,6 +70,8 @@ class IssuesControllerTest < Test::Unit::TestCase
     # private projects hidden
     assert_no_tag :tag => 'a', :content => /Issue of a private subproject/
     assert_no_tag :tag => 'a', :content => /Issue on project 2/
+    # project column
+    assert_tag :tag => 'th', :content => /Project/
   end
   
   def test_index_should_not_list_issues_when_module_disabled
@@ -193,13 +197,17 @@ class IssuesControllerTest < Test::Unit::TestCase
   end
   
   def test_index_sort
-    get :index, :sort_key => 'tracker'
+    get :index, :sort => 'tracker,id:desc'
     assert_response :success
     
-    sort_params = @request.session['issuesindex_sort']
-    assert sort_params.is_a?(Hash)
-    assert_equal 'tracker', sort_params[:key]
-    assert_equal 'ASC', sort_params[:order]
+    sort_params = @request.session['issues_index_sort']
+    assert sort_params.is_a?(String)
+    assert_equal 'tracker,id:desc', sort_params
+    
+    issues = assigns(:issues)
+    assert_not_nil issues
+    assert !issues.empty?
+    assert_equal issues.sort {|a,b| a.tracker == b.tracker ? b.id <=> a.id : a.tracker <=> b.tracker }.collect(&:id), issues.collect(&:id)
   end
 
   def test_gantt
@@ -379,6 +387,28 @@ class IssuesControllerTest < Test::Unit::TestCase
     assert_equal Project.find(1).trackers.first, issue.tracker
   end
   
+  def test_get_new_with_no_default_status_should_display_an_error
+    @request.session[:user_id] = 2
+    IssueStatus.delete_all
+    
+    get :new, :project_id => 1
+    assert_response 500
+    assert_not_nil flash[:error]
+    assert_tag :tag => 'div', :attributes => { :class => /error/ },
+                              :content => /No default issue/
+  end
+  
+  def test_get_new_with_no_tracker_should_display_an_error
+    @request.session[:user_id] = 2
+    Tracker.delete_all
+    
+    get :new, :project_id => 1
+    assert_response 500
+    assert_not_nil flash[:error]
+    assert_tag :tag => 'div', :attributes => { :class => /error/ },
+                              :content => /No tracker/
+  end
+  
   def test_update_new_form
     @request.session[:user_id] = 2
     xhr :post, :new, :project_id => 1,
@@ -471,6 +501,21 @@ class IssuesControllerTest < Test::Unit::TestCase
     mail = ActionMailer::Base.deliveries.last
     assert_kind_of TMail::Mail, mail
     assert [mail.bcc, mail.cc].flatten.include?(User.find(3).mail)
+  end
+  
+  def test_post_new_should_send_a_notification
+    ActionMailer::Base.deliveries.clear
+    @request.session[:user_id] = 2
+    post :new, :project_id => 1, 
+               :issue => {:tracker_id => 3,
+                          :subject => 'This is the test_new issue',
+                          :description => 'This is the description',
+                          :priority_id => 5,
+                          :estimated_hours => '',
+                          :custom_field_values => {'2' => 'Value for field 2'}}
+    assert_redirected_to :action => 'show'
+    
+    assert_equal 1, ActionMailer::Base.deliveries.size
   end
   
   def test_post_should_preserve_fields_values_on_validation_failure
@@ -730,6 +775,20 @@ class IssuesControllerTest < Test::Unit::TestCase
     # No email should be sent
     assert ActionMailer::Base.deliveries.empty?
   end
+
+  def test_post_edit_should_send_a_notification
+    @request.session[:user_id] = 2
+    ActionMailer::Base.deliveries.clear
+    issue = Issue.find(1)
+    old_subject = issue.subject
+    new_subject = 'Subject modified by IssuesControllerTest#test_post_edit'
+    
+    post :edit, :id => 1, :issue => {:subject => new_subject,
+                                     :priority_id => '6',
+                                     :category_id => '1' # no change
+                                    }
+    assert_equal 1, ActionMailer::Base.deliveries.size
+  end
   
   def test_post_edit_with_invalid_spent_time
     @request.session[:user_id] = 2
@@ -765,6 +824,22 @@ class IssuesControllerTest < Test::Unit::TestCase
     assert_equal '125', issue.custom_value_for(2).value
     assert_equal 'Bulk editing', journal.notes
     assert_equal 1, journal.details.size
+  end
+
+  def test_bullk_edit_should_send_a_notification
+    @request.session[:user_id] = 2
+    ActionMailer::Base.deliveries.clear
+    post(:bulk_edit,
+         {
+           :ids => [1, 2],
+           :priority_id => 7,
+           :assigned_to_id => '',
+           :custom_field_values => {'2' => ''},
+           :notes => 'Bulk editing'
+         })
+
+    assert_response 302
+    assert_equal 2, ActionMailer::Base.deliveries.size
   end
 
   def test_bulk_edit_custom_field

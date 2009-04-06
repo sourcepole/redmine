@@ -20,6 +20,7 @@ ja:
   time:
     formats:
       default: "%Y/%m/%d %H:%M:%S"
+      time: "%H:%M"
       short: "%y/%m/%d %H:%M"
       long: "%Y年%m月%d日(%a) %H時%M分%S秒 %Z"
     am: "午前"
@@ -177,7 +178,7 @@ ja:
   field_filename: ファイル
   field_filesize: サイズ
   field_downloads: ダウンロード
-  field_author: 起票者
+  field_author: 作成者
   field_created_on: 作成日
   field_updated_on: 更新日
   field_field_format: 書式
@@ -194,7 +195,7 @@ ja:
   field_status: ステータス
   field_notes: 注記
   field_is_closed: 終了したチケット
-  field_is_default: デフォルトのステータス
+  field_is_default: デフォルト値
   field_tracker: トラッカー
   field_subject: 題名
   field_due_date: 期限日
@@ -229,7 +230,7 @@ ja:
   field_attr_mail: メール属性
   field_onthefly: あわせてユーザを作成
   field_start_date: 開始日
-  field_done_ratio: 進捗 %%
+  field_done_ratio: 進捗 %
   field_auth_source: 認証モード
   field_hide_mail: メールアドレスを隠す
   field_comments: コメント
@@ -246,7 +247,7 @@ ja:
   field_assignable: チケットはこのロールに割り当てることができます
   field_redirect_existing_links: 既存のリンクをリダイレクトする
   field_estimated_hours: 予定工数
-  field_default_value: デフォルトのステータス
+  field_default_value: デフォルト値
   
   setting_app_title: アプリケーションのタイトル
   setting_app_subtitle: アプリケーションのサブタイトル
@@ -654,7 +655,7 @@ ja:
   button_annotate: 注釈
   label_issues_by: "{{value}}別のチケット"
   field_searchable: Searchable
-  label_display_per_page: "1ページに: {{value}}'"
+  label_display_per_page: "1ページに: {{value}}"
   setting_per_page_options: ページ毎の表示件数
   label_age: 年齢
   notice_default_data_loaded: デフォルト設定をロードしました。
@@ -718,15 +719,15 @@ ja:
   setting_default_projects_public: デフォルトで新しいプロジェクトは公開にする
   error_scm_annotate: "エントリが存在しない、もしくはアノテートできません。"
   label_planning: 計画
-  text_subprojects_destroy_warning: "サブプロジェクト {{value}} も削除されます。'"
+  text_subprojects_destroy_warning: "サブプロジェクト {{value}} も削除されます。"
   label_and_its_subprojects: "{{value}} とサブプロジェクト"
   mail_body_reminder: "{{count}}件の担当チケットの期限が{{days}}日以内に到来します:"
   mail_subject_reminder: "{{count}}件のチケットが期限間近です"
-  text_user_wrote: "{{value}} wrote:'"
+  text_user_wrote: "{{value}} wrote:"
   label_duplicated_by: duplicated by
   setting_enabled_scm: 使用するSCM
   text_enumeration_category_reassign_to: '次の値に割り当て直す:'
-  text_enumeration_destroy_question: "{{count}}個のオブジェクトがこの値に割り当てられています。'"
+  text_enumeration_destroy_question: "{{count}}個のオブジェクトがこの値に割り当てられています。"
   label_incoming_emails: 受信メール
   label_generate_key: キーの生成
   setting_mail_handler_api_enabled: 受信メール用のWeb Serviceを有効にする
@@ -795,10 +796,22 @@ ja:
   label_updated_time_by: "{{author}}が{{age}}前に更新"
   text_diff_truncated: '... 差分の行数が表示可能な上限を超えました。超過分は表示しません。'
   setting_diff_max_lines_displayed: 差分の表示行数の上限
-  text_plugin_assets_writable: Plugin assets directory writable
+  text_plugin_assets_writable: Plugin assetsディレクトリに書き込み可能
   warning_attachments_not_saved: "{{count}}個のファイルが保存できませんでした。"
   button_create_and_continue: 連続作成
   text_custom_field_possible_values_info: '選択肢の値は1行に1個ずつ記述してください。'
   label_display: 表示
   field_editable: Editable
-  setting_repository_log_display_limit: Maximum number of revisions displayed on file log
+  setting_repository_log_display_limit: ファイルのリビジョン表示数の上限
+  setting_file_max_size_displayed: Max size of text files displayed inline
+  field_watcher: Watcher
+  setting_openid: OpenIDによるログインと登録
+  field_identity_url: OpenID URL
+  label_login_with_open_id_option: or login with OpenID
+  field_content: Content
+  label_descending: Descending
+  label_sort: Sort
+  label_ascending: Ascending
+  label_date_from_to: From {{start}} to {{end}}
+  label_greater_or_equal: ">="
+  label_less_or_equal: <=
