@@ -23,7 +23,7 @@ class IssuesController < ApplicationController
   before_filter :find_project, :only => [:new, :update_form, :preview]
   before_filter :authorize, :except => [:index, :changes, :gantt, :calendar, :preview, :update_form, :context_menu]
   before_filter :find_optional_project, :only => [:index, :changes, :gantt, :calendar]
-  accept_key_auth :index, :changes
+  accept_key_auth :index, :show, :changes
 
   helper :journals
   helper :projects
@@ -343,10 +343,12 @@ class IssuesController < ApplicationController
       @gantt.events = events
     end
     
+    basename = (@project ? "#{@project.identifier}-" : '') + 'gantt'
+    
     respond_to do |format|
       format.html { render :template => "issues/gantt.rhtml", :layout => !request.xhr? }
-      format.png  { send_data(@gantt.to_image, :disposition => 'inline', :type => 'image/png', :filename => "#{@project.identifier}-gantt.png") } if @gantt.respond_to?('to_image')
-      format.pdf  { send_data(gantt_to_pdf(@gantt, @project), :type => 'application/pdf', :filename => "#{@project.nil? ? '' : "#{@project.identifier}-" }gantt.pdf") }
+      format.png  { send_data(@gantt.to_image, :disposition => 'inline', :type => 'image/png', :filename => "#{basename}.png") } if @gantt.respond_to?('to_image')
+      format.pdf  { send_data(gantt_to_pdf(@gantt, @project), :type => 'application/pdf', :filename => "#{basename}.pdf") }
     end
   end
   
