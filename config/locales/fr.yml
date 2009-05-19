@@ -112,7 +112,7 @@ fr:
         too_long: "est trop long (pas plus de {{count}} caractères)"
         too_short: "est trop court (au moins {{count}} caractères)"
         wrong_length: "ne fait pas la bonne longueur (doit comporter {{count}} caractères)"
-        taken: "n'est pas disponible"
+        taken: "est déjà utilisé"
         not_a_number: "n'est pas un nombre"
         greater_than: "doit être supérieur à {{count}}"
         greater_than_or_equal_to: "doit être supérieur ou égal à {{count}}"
@@ -181,6 +181,10 @@ fr:
   mail_body_account_activation_request: "Un nouvel utilisateur ({{value}}) s'est inscrit. Son compte nécessite votre approbation:"
   mail_subject_reminder: "{{count}} demande(s) arrivent à échéance"
   mail_body_reminder: "{{count}} demande(s) qui vous sont assignées arrivent à échéance dans les {{days}} prochains jours:"
+  mail_subject_wiki_content_added: "Page wiki '{{page}}' ajoutée"
+  mail_body_wiki_content_added: "La page wiki '{{page}}' a été ajoutée par {{author}}."
+  mail_subject_wiki_content_updated: "Page wiki '{{page}}' mise à jour"
+  mail_body_wiki_content_updated: "La page wiki '{{page}}' a été mise à jour par {{author}}."
   
   gui_validation_error: 1 erreur
   gui_validation_error_plural: "{{count}} erreurs"
@@ -274,6 +278,7 @@ fr:
   field_watcher: Observateur
   field_identity_url: URL OpenID
   field_content: Contenu
+  field_group_by: Grouper par
   
   setting_app_title: Titre de l'application
   setting_app_subtitle: Sous-titre de l'application
@@ -317,7 +322,10 @@ fr:
   setting_file_max_size_displayed: Taille maximum des fichiers texte affichés en ligne
   setting_repository_log_display_limit: "Nombre maximum de revisions affichées sur l'historique d'un fichier"
   setting_openid: "Autoriser l'authentification et l'enregistrement OpenID"
+  setting_password_min_length: Longueur minimum des mots de passe
+  setting_new_project_user_role_id: Rôle donné à un utilisateur non-administrateur qui crée un projet
   
+  permission_add_project: Créer un projet
   permission_edit_project: Modifier le projet
   permission_select_project_modules: Choisir les modules
   permission_manage_members: Gérer les members
@@ -698,6 +706,8 @@ fr:
   label_ascending: Croissant
   label_descending: Décroissant
   label_date_from_to: Du {{start}} au {{end}}
+  label_wiki_content_added: Page wiki ajoutée
+  label_wiki_content_updated: Page wiki mise à jour
   
   button_login: Connexion
   button_submit: Soumettre
@@ -780,7 +790,7 @@ fr:
   text_file_repository_writable: Répertoire de stockage des fichiers accessible en écriture
   text_plugin_assets_writable: Répertoire public des plugins accessible en écriture
   text_rmagick_available: Bibliothèque RMagick présente (optionnelle)
-  text_destroy_time_entries_question: %.02f heures ont été enregistrées sur les demandes à supprimer. Que voulez-vous faire ?
+  text_destroy_time_entries_question: "{{hours}} heures ont été enregistrées sur les demandes à supprimer. Que voulez-vous faire ?"
   text_destroy_time_entries: Supprimer les heures
   text_assign_time_entries_to_project: Reporter les heures sur le projet
   text_reassign_time_entries: 'Reporter les heures sur cette demande:'
@@ -791,6 +801,10 @@ fr:
   text_repository_usernames_mapping: "Vous pouvez sélectionner ou modifier l'utilisateur Redmine associé à chaque nom d'utilisateur figurant dans l'historique du dépôt.\nLes utilisateurs avec le même identifiant ou la même adresse mail seront automatiquement associés."
   text_diff_truncated: '... Ce différentiel a été tronqué car il excède la taille maximale pouvant être affichée.'
   text_custom_field_possible_values_info: 'Une ligne par valeur'
+  text_wiki_page_destroy_question: "Cette page possède {{descendants}} sous-page(s) et descendante(s). Que voulez-vous faire ?"
+  text_wiki_page_nullify_children: "Conserver les sous-pages en tant que pages racines"
+  text_wiki_page_destroy_children: "Supprimer les sous-pages et toutes leurs descedantes"
+  text_wiki_page_reassign_children: "Réaffecter les sous-pages à cette page"
   
   default_role_manager: Manager
   default_role_developper: Développeur

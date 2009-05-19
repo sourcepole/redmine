@@ -31,16 +31,15 @@
     <p><%= link_to l(:label_issue_view_all), :controller => 'issues', :action => 'index', :project_id => @project, :set_filter => 1 %></p>
   </div>
   <% end %>
+  <%= call_hook(:view_projects_show_left, :project => @project) %>
 </div>
 
 <div class="splitcontentright">
-    <% if @members_by_role.any? %>
+  <% if @users_by_role.any? %>
 	<div class="box">
 		<h3 class="icon22 icon22-users"><%=l(:label_member_plural)%></h3>	
-		<p><% @members_by_role.keys.sort.each do |role| %>
-		<%= role.name %>:
-		<%= @members_by_role[role].collect(&:user).sort.collect{|u| link_to_user u}.join(", ") %>
-		<br />
+		<p><% @users_by_role.keys.sort.each do |role| %>
+		<%=h role %>: <%= @users_by_role[role].sort.collect{|u| link_to_user u}.join(", ") %><br />
 		<% end %></p>
 	</div>
 	<% end %>
@@ -52,6 +51,7 @@
     <p><%= link_to l(:label_news_view_all), :controller => 'news', :action => 'index', :project_id => @project %></p>
   </div>  
   <% end %>
+  <%= call_hook(:view_projects_show_right, :project => @project) %>
 </div>
 
 <% content_for :sidebar do %>

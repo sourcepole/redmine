@@ -697,7 +697,7 @@
   text_default_administrator_account_changed: Alapértelmezett adminisztrátor fiók megváltoztatva
   text_file_repository_writable: Fájl tároló írható
   text_rmagick_available: RMagick elérhető (opcionális)
-  text_destroy_time_entries_question: %.02f órányi munka van rögzítve a feladatokon, amiket törölni szeretne. Mit szeretne tenni ?
+  text_destroy_time_entries_question: "{{hours}} órányi munka van rögzítve a feladatokon, amiket törölni szeretne. Mit szeretne tenni ?"
   text_destroy_time_entries: A rögzített órák törlése
   text_assign_time_entries_to_project: A rögzített órák hozzárendelése a projekthez
   text_reassign_time_entries: 'A rögzített órák újra hozzárendelése ehhez a feladathoz:'
@@ -742,7 +742,7 @@
   field_parent_title: Szülő oldal
   label_issue_watchers: Megfigyelők
   setting_commit_logs_encoding: Commit üzenetek kódlapja
-  button_quote: Idézet
+  button_quote: Hozzászólás / Idézet
   setting_sequential_project_identifiers: Szekvenciális projekt azonosítók generálása
   notice_unable_delete_version: A verziót nem lehet törölni
   label_renamed: átnevezve
@@ -821,4 +821,18 @@
   label_ascending: Növekvő
   label_date_from_to: "{{start}} -tól {{end}} -ig"
   label_greater_or_equal: ">="
-  label_less_or_equal: <=
+  label_less_or_equal: "<="
+  text_wiki_page_destroy_question: Ennek az oldalnak {{descendants}} gyermek-, és leszármazott oldala van. Mit szeretne tenni?
+  text_wiki_page_reassign_children: Az aloldalak hozzárendelése ehhez a szülő oldalhoz
+  text_wiki_page_nullify_children: Az aloldalak megtartása, mint főoldalak
+  text_wiki_page_destroy_children: Minden aloldal és leszármazottjának törlése
+  setting_password_min_length: Minimum jelszó hosszúság
+  field_group_by: Szerint csoportosítva
+  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
+  label_wiki_content_added: Wiki page added
+  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
+  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
+  label_wiki_content_updated: Wiki page updated
+  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
+  permission_add_project: Create project
+  setting_new_project_user_role_id: Role given to a non-admin user who creates a project

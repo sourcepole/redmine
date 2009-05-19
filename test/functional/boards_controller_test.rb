@@ -22,7 +22,7 @@ require 'boards_controller'
 class BoardsController; def rescue_action(e) raise e end; end
 
 class BoardsControllerTest < Test::Unit::TestCase
-  fixtures :projects, :users, :members, :roles, :boards, :messages, :enabled_modules
+  fixtures :projects, :users, :members, :member_roles, :roles, :boards, :messages, :enabled_modules
   
   def setup
     @controller = BoardsController.new
@@ -84,6 +84,10 @@ class BoardsControllerTest < Test::Unit::TestCase
       {:method => :get, :path => '/projects/world_domination/boards/44'},
       :controller => 'boards', :action => 'show', :id => '44', :project_id => 'world_domination'
     )
+    assert_routing(
+      {:method => :get, :path => '/projects/world_domination/boards/44.atom'},
+      :controller => 'boards', :action => 'show', :id => '44', :project_id => 'world_domination', :format => 'atom'
+    )
   end
   
   def test_show
@@ -93,6 +97,15 @@ class BoardsControllerTest < Test::Unit::TestCase
     assert_not_nil assigns(:board)
     assert_not_nil assigns(:project)
     assert_not_nil assigns(:topics)
+  end
+  
+  def test_show_atom
+    get :show, :project_id => 1, :id => 1, :format => 'atom'
+    assert_response :success
+    assert_template 'common/feed.atom'
+    assert_not_nil assigns(:board)
+    assert_not_nil assigns(:project)
+    assert_not_nil assigns(:messages)
   end
   
   def test_edit_routing

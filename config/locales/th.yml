@@ -661,7 +661,7 @@ th:
   text_default_administrator_account_changed: ค่าเริ่มต้นของบัญชีผู้บริหารจัดการถูกเปลี่ยนแปลง
   text_file_repository_writable: ที่เก็บต้นฉบับสามารถเขียนได้
   text_rmagick_available: RMagick มีให้ใช้ (เป็นตัวเลือก)
-  text_destroy_time_entries_question: %.02f ชั่วโมงที่ถูกแจ้งในปัญหานี้จะโดนลบ. คุณต้องการทำอย่างไร?
+  text_destroy_time_entries_question: "{{hours}} ชั่วโมงที่ถูกแจ้งในปัญหานี้จะโดนลบ. คุณต้องการทำอย่างไร?"
   text_destroy_time_entries: ลบเวลาที่รายงานไว้
   text_assign_time_entries_to_project: ระบุเวลาที่ใช้ในโครงการนี้
   text_reassign_time_entries: 'ระบุเวลาที่ใช้ในโครงการนี่อีกครั้ง:'
@@ -787,3 +787,17 @@ th:
   label_date_from_to: From {{start}} to {{end}}
   label_greater_or_equal: ">="
   label_less_or_equal: <=
+  text_wiki_page_destroy_question: This page has {{descendants}} child page(s) and descendant(s). What do you want to do?
+  text_wiki_page_reassign_children: Reassign child pages to this parent page
+  text_wiki_page_nullify_children: Keep child pages as root pages
+  text_wiki_page_destroy_children: Delete child pages and all their descendants
+  setting_password_min_length: Minimum password length
+  field_group_by: Group results by
+  mail_subject_wiki_content_updated: "'{{page}}' wiki page has been updated"
+  label_wiki_content_added: Wiki page added
+  mail_subject_wiki_content_added: "'{{page}}' wiki page has been added"
+  mail_body_wiki_content_added: The '{{page}}' wiki page has been added by {{author}}.
+  label_wiki_content_updated: Wiki page updated
+  mail_body_wiki_content_updated: The '{{page}}' wiki page has been updated by {{author}}.
+  permission_add_project: Create project
+  setting_new_project_user_role_id: Role given to a non-admin user who creates a project

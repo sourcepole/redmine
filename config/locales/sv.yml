@@ -207,6 +207,10 @@ sv:
   mail_body_account_activation_request: "En ny användare ({{value}}) har registrerat sig och avvaktar ditt godkännande:"
   mail_subject_reminder: "{{count}} ärende(n) har deadline under de kommande dagarna"
   mail_body_reminder: "{{count}} ärende(n) som är tilldelat dig har deadline under de {{days}} dagarna:"
+  mail_subject_wiki_content_added: "'{{page}}' wikisida has lagts till"
+  mail_body_wiki_content_added: The '{{page}}' wikisida has lagts till av {{author}}.
+  mail_subject_wiki_content_updated: "'{{page}}' wikisida har uppdaterats"
+  mail_body_wiki_content_updated: The '{{page}}' wikisida har uppdaterats av {{author}}.
   
   gui_validation_error: 1 fel
   gui_validation_error_plural: "{{count}} fel"
@@ -271,7 +275,7 @@ sv:
   field_attr_firstname: Förnamnsattribut
   field_attr_lastname: Efternamnsattribut
   field_attr_mail: Mailattribut
-  field_onthefly: On-the-fly användarskapning
+  field_onthefly: Skapa användare on-the-fly
   field_start_date: Start
   field_done_ratio: % Klart
   field_auth_source: Autentiseringsläge
@@ -300,6 +304,7 @@ sv:
   field_watcher: Bevakare  
   field_identity_url: OpenID URL
   field_content: Innehåll
+  field_group_by: Gruppera resultat efter
   
   setting_app_title: Applikationsrubrik
   setting_app_subtitle: Applikationsunderrubrik
@@ -343,7 +348,10 @@ sv:
   setting_file_max_size_displayed: Maxstorlek på textfiler som visas inline
   setting_repository_log_display_limit: Maximalt antal revisioner i filloggen
   setting_openid: Tillåt inloggning och registrering med OpenID
+  setting_password_min_length: Minsta tillåtna lösenordslängd
+  setting_new_project_user_role_id: Tilldelad roll för en icke-administratör som skapar ett projekt
   
+  permission_add_project: Skapa projekt
   permission_edit_project: Ändra projekt
   permission_select_project_modules: Välja projektmoduler
   permission_manage_members: Hantera medlemmar
@@ -725,6 +733,8 @@ sv:
   label_descending: Fallande
   label_ascending: Stigande
   label_date_from_to: Från {{start}} till {{end}}
+  label_wiki_content_added: Wikisida tillagd
+  label_wiki_content_updated: Wikisida uppdaterad
   
   button_login: Logga in
   button_submit: Spara
@@ -807,7 +817,7 @@ sv:
   text_file_repository_writable: Arkivet för bifogade filer är skrivbar
   text_plugin_assets_writable: Arkivet för plug-ins är skrivbar
   text_rmagick_available: RMagick tillgängligt (valfritt)
-  text_destroy_time_entries_question: %.02f timmar har rapporterats på ärendena du är på väg att ta bort. Vad vill du göra ?
+  text_destroy_time_entries_question: "{{hours}} timmar har rapporterats på ärendena du är på väg att ta bort. Vad vill du göra ?"
   text_destroy_time_entries: Ta bort rapporterade timmar
   text_assign_time_entries_to_project: Tilldela rapporterade timmar till projektet
   text_reassign_time_entries: 'Återtilldela rapporterade timmar till detta ärende:'
@@ -817,7 +827,11 @@ sv:
   text_email_delivery_not_configured: "Mailfunktionen har inte konfigurerats, och notifieringar via mail kan därför inte skickas.\nKonfigurera din SMTP-server i config/email.yml och starta om applikationen för att aktivera dem."
   text_repository_usernames_mapping: "Välj eller uppdatera den Redmine-användare som är mappad till varje användarnamn i versionarkivloggen.\nAnvändare med samma användarnamn eller emailadress i både Redmine och versionsarkivet mappas automatiskt."
   text_diff_truncated: '... Denna diff har förminskats eftersom den överskrider den maximala storlek som kan visas.'
-  text_custom_field_possible_values_info: 'En linje för varje värde'
+  text_custom_field_possible_values_info: 'Ett värde per rad'
+  text_wiki_page_destroy_question: Denna sida har {{descendants}} underliggande sidor. Vad vill du göra?
+  text_wiki_page_nullify_children: Behåll undersidor som rotsidor
+  text_wiki_page_destroy_children: Ta bort alla underliggande sidor
+  text_wiki_page_reassign_children: Flytta undersidor till denna föräldersida
   
   default_role_manager: Projektledare
   default_role_developper: Utvecklare

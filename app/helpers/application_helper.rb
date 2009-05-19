@@ -28,10 +28,6 @@ module ApplicationHelper
   extend Forwardable
   def_delegators :wiki_helper, :wikitoolbar_for, :heads_for_wiki_formatter
 
-  def current_role
-    @current_role ||= User.current.role_for_project(@project)
-  end
-
   # Return true if user is authorized for controller/action, otherwise false
   def authorize_for(controller, action)
     User.current.allowed_to?({:controller => controller, :action => action}, @project)
@@ -54,9 +50,7 @@ module ApplicationHelper
   end
 
   def link_to_issue(issue, options={})
-    options[:class] ||= ''
-    options[:class] << ' issue'
-    options[:class] << ' closed' if issue.closed?
+    options[:class] ||= issue.css_classes
     link_to "#{issue.tracker.name} ##{issue.id}", {:controller => "issues", :action => "show", :id => issue}, options
   end
 
@@ -606,7 +600,7 @@ module ApplicationHelper
       @calendar_headers_tags_included = true
       content_for :header_tags do
         javascript_include_tag('calendar/calendar') +
-        javascript_include_tag("calendar/lang/calendar-#{current_language}.js") +
+        javascript_include_tag("calendar/lang/calendar-#{current_language.to_s.downcase}.js") +
         javascript_include_tag('calendar/calendar-setup') +
         stylesheet_link_tag('calendar')
       end
