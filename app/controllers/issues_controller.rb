@@ -17,6 +17,7 @@
 
 class IssuesController < ApplicationController
   menu_item :new_issue, :only => :new
+  default_search_scope :issues
   
   before_filter :find_issue, :only => [:show, :edit, :reply]
   before_filter :find_issues, :only => [:bulk_edit, :move, :destroy]
@@ -43,6 +44,10 @@ class IssuesController < ApplicationController
   helper :timelog
   include Redmine::Export::PDF
 
+  verify :method => :post,
+         :only => :destroy,
+         :render => { :nothing => true, :status => :method_not_allowed }
+           
   def index
     retrieve_query
     sort_init(@query.sort_criteria.empty? ? [['id', 'desc']] : @query.sort_criteria)
@@ -52,14 +57,14 @@ class IssuesController < ApplicationController
       limit = per_page_option
       respond_to do |format|
         format.html { }
-        format.atom { }
+        format.atom { limit = Setting.feeds_limit.to_i }
         format.csv  { limit = Setting.issues_export_limit.to_i }
         format.pdf  { limit = Setting.issues_export_limit.to_i }
       end
       @issue_count = Issue.count(:include => [:status, :project], :conditions => @query.statement)
       @issue_pages = Paginator.new self, @issue_count, limit, params['page']
       @issues = Issue.find :all, :order => [@query.group_by_sort_order, sort_clause].compact.join(','),
-                           :include => [ :assigned_to, :status, :tracker, :project, :priority, :category, :fixed_version ],
+                           :include => ([:status, :project, :priority] + @query.include_options),
                            :conditions => @query.statement,
                            :limit  =>  limit,
                            :offset =>  @issue_pages.current.offset
@@ -68,7 +73,7 @@ class IssuesController < ApplicationController
           if @query.grouped?
             # Retrieve the issue count by group
             @issue_count_by_group = begin
-              Issue.count(:group => @query.group_by, :include => [:status, :project], :conditions => @query.statement)
+              Issue.count(:group => @query.group_by_statement, :include => [:status, :project], :conditions => @query.statement)
             # Rails will raise an (unexpected) error if there's only a nil group value
             rescue ActiveRecord::RecordNotFound
               {nil => @issue_count}
@@ -77,7 +82,7 @@ class IssuesController < ApplicationController
           render :template => 'issues/index.rhtml', :layout => !request.xhr?
         }
         format.atom { render_feed(@issues, :title => "#{@project || Setting.app_title}: #{l(:label_issue_plural)}") }
-        format.csv  { send_data(issues_to_csv(@issues, @project).read, :type => 'text/csv; header=present', :filename => 'export.csv') }
+        format.csv  { send_data(issues_to_csv(@issues, @project), :type => 'text/csv; header=present', :filename => 'export.csv') }
         format.pdf  { send_data(issues_to_pdf(@issues, @project, @query), :type => 'application/pdf', :filename => 'export.pdf') }
       end
     else
@@ -113,7 +118,7 @@ class IssuesController < ApplicationController
     @changesets.reverse! if User.current.wants_comments_in_reverse_order?
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current)
     @edit_allowed = User.current.allowed_to?(:edit_issues, @project)
-    @priorities = Enumeration.priorities
+    @priorities = IssuePriority.all
     @time_entry = TimeEntry.new
     respond_to do |format|
       format.html { render :template => 'issues/show.rhtml' }
@@ -131,7 +136,7 @@ class IssuesController < ApplicationController
     # Tracker must be set before custom field values
     @issue.tracker ||= @project.trackers.find((params[:issue] && params[:issue][:tracker_id]) || params[:tracker_id] || :first)
     if @issue.tracker.nil?
-      render_error 'No tracker is associated to this project. Please check the Project settings.'
+      render_error l(:error_no_tracker_in_project)
       return
     end
     if params[:issue].is_a?(Hash)
@@ -142,7 +147,7 @@ class IssuesController < ApplicationController
     
     default_status = IssueStatus.default
     unless default_status
-      render_error 'No default issue status is defined. Please check your configuration (Go to "Administration -> Issue statuses").'
+      render_error l(:error_no_default_issue_status)
       return
     end    
     @issue.status = default_status
@@ -163,7 +168,7 @@ class IssuesController < ApplicationController
         return
       end		
     end	
-    @priorities = Enumeration.priorities
+    @priorities = IssuePriority.all
     render :layout => !request.xhr?
   end
   
@@ -173,7 +178,7 @@ class IssuesController < ApplicationController
   
   def edit
     @allowed_statuses = @issue.new_statuses_allowed_to(User.current)
-    @priorities = Enumeration.priorities
+    @priorities = IssuePriority.all
     @edit_allowed = User.current.allowed_to?(:edit_issues, @project)
     @time_entry = TimeEntry.new
     
@@ -211,6 +216,8 @@ class IssuesController < ApplicationController
   rescue ActiveRecord::StaleObjectError
     # Optimistic locking exception
     flash.now[:error] = l(:notice_locking_conflict)
+    # Remove the previously added attachments if issue was not updated
+    attachments.each(&:destroy)
   end
 
   def reply
@@ -237,7 +244,7 @@ class IssuesController < ApplicationController
   def bulk_edit
     if request.post?
       status = params[:status_id].blank? ? nil : IssueStatus.find_by_id(params[:status_id])
-      priority = params[:priority_id].blank? ? nil : Enumeration.find_by_id(params[:priority_id])
+      priority = params[:priority_id].blank? ? nil : IssuePriority.find_by_id(params[:priority_id])
       assigned_to = (params[:assigned_to_id].blank? || params[:assigned_to_id] == 'none') ? nil : User.find_by_id(params[:assigned_to_id])
       category = (params[:category_id].blank? || params[:category_id] == 'none') ? nil : @project.issue_categories.find_by_id(params[:category_id])
       fixed_version = (params[:fixed_version_id].blank? || params[:fixed_version_id] == 'none') ? nil : @project.versions.find_by_id(params[:fixed_version_id])
@@ -292,9 +299,14 @@ class IssuesController < ApplicationController
     if request.post?
       new_tracker = params[:new_tracker_id].blank? ? nil : @target_project.trackers.find_by_id(params[:new_tracker_id])
       unsaved_issue_ids = []
+      moved_issues = []
       @issues.each do |issue|
         issue.init_journal(User.current)
-        unsaved_issue_ids << issue.id unless issue.move_to(@target_project, new_tracker, params[:copy_options])
+        if r = issue.move_to(@target_project, new_tracker, params[:copy_options])
+          moved_issues << r
+        else
+          unsaved_issue_ids << issue.id
+        end
       end
       if unsaved_issue_ids.empty?
         flash[:notice] = l(:notice_successful_update) unless @issues.empty?
@@ -303,7 +315,15 @@ class IssuesController < ApplicationController
                                                          :total => @issues.size,
                                                          :ids => '#' + unsaved_issue_ids.join(', #'))
       end
-      redirect_to :controller => 'issues', :action => 'index', :project_id => @project
+      if params[:follow]
+        if @issues.size == 1 && moved_issues.size == 1
+          redirect_to :controller => 'issues', :action => 'show', :id => moved_issues.first
+        else
+          redirect_to :controller => 'issues', :action => 'index', :project_id => (@target_project || @project)
+        end
+      else
+        redirect_to :controller => 'issues', :action => 'index', :project_id => @project
+      end
       return
     end
     render :layout => false if request.xhr?
@@ -415,9 +435,9 @@ class IssuesController < ApplicationController
       @assignables << @issue.assigned_to if @issue && @issue.assigned_to && !@assignables.include?(@issue.assigned_to)
     end
     
-    @priorities = Enumeration.priorities.reverse
+    @priorities = IssuePriority.all.reverse
     @statuses = IssueStatus.find(:all, :order => 'position')
-    @back = request.env['HTTP_REFERER']
+    @back = params[:back_url] || request.env['HTTP_REFERER']
     
     render :layout => false
   end

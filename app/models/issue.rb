@@ -22,7 +22,7 @@ class Issue < ActiveRecord::Base
   belongs_to :author, :class_name => 'User', :foreign_key => 'author_id'
   belongs_to :assigned_to, :class_name => 'User', :foreign_key => 'assigned_to_id'
   belongs_to :fixed_version, :class_name => 'Version', :foreign_key => 'fixed_version_id'
-  belongs_to :priority, :class_name => 'Enumeration', :foreign_key => 'priority_id'
+  belongs_to :priority, :class_name => 'IssuePriority', :foreign_key => 'priority_id'
   belongs_to :category, :class_name => 'IssueCategory', :foreign_key => 'category_id'
 
   has_many :journals, :as => :journalized, :dependent => :destroy
@@ -39,7 +39,7 @@ class Issue < ActiveRecord::Base
                      :include => [:project, :journals],
                      # sort by id so that limited eager loading doesn't break with postgresql
                      :order_column => "#{table_name}.id"
-  acts_as_event :title => Proc.new {|o| "#{o.tracker.name} ##{o.id}: #{o.subject}"},
+  acts_as_event :title => Proc.new {|o| "#{o.tracker.name} ##{o.id} (#{o.status}): #{o.subject}"},
                 :url => Proc.new {|o| {:controller => 'issues', :action => 'show', :id => o.id}},
                 :type => Proc.new {|o| 'issue' + (o.closed? ? ' closed' : '') }
   
@@ -67,7 +67,7 @@ class Issue < ActiveRecord::Base
     if new_record?
       # set default values for new records only
       self.status ||= IssueStatus.default
-      self.priority ||= Enumeration.priorities.default
+      self.priority ||= IssuePriority.default
     end
   end
   
@@ -78,8 +78,9 @@ class Issue < ActiveRecord::Base
   
   def copy_from(arg)
     issue = arg.is_a?(Issue) ? arg : Issue.find(arg)
-    self.attributes = issue.attributes.dup
+    self.attributes = issue.attributes.dup.except("id", "created_on", "updated_on")
     self.custom_values = issue.custom_values.collect {|v| v.clone}
+    self.status = issue.status
     self
   end
   
@@ -143,6 +144,14 @@ class Issue < ActiveRecord::Base
     if start_date && soonest_start && start_date < soonest_start
       errors.add :start_date, :invalid
     end
+    
+    if fixed_version
+      if !assignable_versions.include?(fixed_version)
+        errors.add :fixed_version_id, :inclusion
+      elsif reopened? && fixed_version.closed?
+        errors.add_to_base I18n.t(:error_can_not_reopen_issue_on_closed_version)
+      end
+    end
   end
   
   def validate_on_create
@@ -193,6 +202,18 @@ class Issue < ActiveRecord::Base
     self.status.is_closed?
   end
   
+  # Return true if the issue is being reopened
+  def reopened?
+    if !new_record? && status_id_changed?
+      status_was = IssueStatus.find_by_id(status_id_was)
+      status_new = IssueStatus.find_by_id(status_id)
+      if status_was && status_new && status_was.is_closed? && !status_new.is_closed?
+        return true
+      end
+    end
+    false
+  end
+  
   # Returns true if the issue is overdue
   def overdue?
     !due_date.nil? && (due_date < Date.today) && !status.is_closed?
@@ -203,11 +224,22 @@ class Issue < ActiveRecord::Base
     project.assignable_users
   end
   
+  # Versions that the issue can be assigned to
+  def assignable_versions
+    @assignable_versions ||= (project.versions.open + [Version.find_by_id(fixed_version_id_was)]).compact.uniq.sort
+  end
+  
+  # Returns true if this issue is blocked by another issue that is still open
+  def blocked?
+    !relations_to.detect {|ir| ir.relation_type == 'blocks' && !ir.issue_from.closed?}.nil?
+  end
+  
   # Returns an array of status that user is able to apply
   def new_statuses_allowed_to(user)
     statuses = status.find_new_statuses_allowed_to(user.roles_for_project(project), tracker)
     statuses << status unless statuses.empty?
-    statuses.uniq.sort
+    statuses = statuses.uniq.sort
+    blocked? ? statuses.reject {|s| s.is_closed?} : statuses
   end
   
   # Returns the mail adresses of users that should be notified for the issue

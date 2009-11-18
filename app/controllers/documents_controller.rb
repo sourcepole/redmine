@@ -16,6 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class DocumentsController < ApplicationController
+  default_search_scope :documents
   before_filter :find_project, :only => [:index, :new]
   before_filter :find_document, :except => [:index, :new]
   before_filter :authorize
@@ -53,7 +54,7 @@ class DocumentsController < ApplicationController
   end
   
   def edit
-    @categories = Enumeration.document_categories
+    @categories = DocumentCategory.all
     if request.post? and @document.update_attributes(params[:document])
       flash[:notice] = l(:notice_successful_update)
       redirect_to :action => 'show', :id => @document

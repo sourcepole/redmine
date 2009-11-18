@@ -81,6 +81,19 @@ class ApplicationHelperTest < HelperTestCase
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text) }
   end
   
+  def test_inline_images_inside_tags
+    raw = <<-RAW
+h1. !foo.png! Heading
+
+Centered image:
+
+p=. !bar.gif!
+RAW
+
+    assert textilizable(raw).include?('<img src="foo.png" alt="" />')
+    assert textilizable(raw).include?('<img src="bar.gif" alt="" />')
+  end
+  
   def test_acronyms
     to_test = {
       'this is an acronym: GPL(General Public License)' => 'this is an acronym: <acronym title="General Public License">GPL</acronym>',
@@ -95,7 +108,9 @@ class ApplicationHelperTest < HelperTestCase
       'Inline image: !logo.gif!' => 'Inline image: <img src="/attachments/download/3" title="This is a logo" alt="This is a logo" />',
       'Inline image: !logo.GIF!' => 'Inline image: <img src="/attachments/download/3" title="This is a logo" alt="This is a logo" />',
       'No match: !ogo.gif!' => 'No match: <img src="ogo.gif" alt="" />',
-      'No match: !ogo.GIF!' => 'No match: <img src="ogo.GIF" alt="" />'
+      'No match: !ogo.GIF!' => 'No match: <img src="ogo.GIF" alt="" />',
+      # link image
+      '!logo.gif!:http://foo.bar/' => '<a href="http://foo.bar/"><img src="/attachments/download/3" title="This is a logo" alt="This is a logo" /></a>',
     }
     attachments = Attachment.find(:all)
     to_test.each { |text, result| assert_equal "<p>#{result}</p>", textilizable(text, :attachments => attachments) }
@@ -109,7 +124,7 @@ class ApplicationHelperTest < HelperTestCase
       '"link (Link title with "double-quotes")":http://foo.bar' => '<a href="http://foo.bar" title="Link title with &quot;double-quotes&quot;" class="external">link</a>',
       "This is not a \"Link\":\n\nAnother paragraph" => "This is not a \"Link\":</p>\n\n\n\t<p>Another paragraph",
       # no multiline link text
-      "This is a double quote \"on the first line\nand another on a second line\":test" => "This is a double quote \"on the first line<br />\nand another on a second line\":test",
+      "This is a double quote \"on the first line\nand another on a second line\":test" => "This is a double quote \"on the first line<br />and another on a second line\":test",
       # mailto link
       "\"system administrator\":mailto:sysadmin@example.com?subject=redmine%20permissions" => "<a href=\"mailto:sysadmin@example.com?subject=redmine%20permissions\">system administrator</a>",
       # two exclamation marks
@@ -120,10 +135,12 @@ class ApplicationHelperTest < HelperTestCase
   
   def test_redmine_links
     issue_link = link_to('#3', {:controller => 'issues', :action => 'show', :id => 3}, 
-                               :class => 'issue', :title => 'Error 281 when updating a recipe (New)')
+                               :class => 'issue status-1 priority-1 overdue', :title => 'Error 281 when updating a recipe (New)')
     
     changeset_link = link_to('r1', {:controller => 'repositories', :action => 'revision', :id => 'ecookbook', :rev => 1},
                                    :class => 'changeset', :title => 'My very first commit')
+    changeset_link2 = link_to('r2', {:controller => 'repositories', :action => 'revision', :id => 'ecookbook', :rev => 2},
+                                    :class => 'changeset', :title => 'This commit fixes #1, #2 and references #1 & #3')
     
     document_link = link_to('Test document', {:controller => 'documents', :action => 'show', :id => 1},
                                              :class => 'document')
@@ -141,6 +158,9 @@ class ApplicationHelperTest < HelperTestCase
       '#3, #3 and #3.'              => "#{issue_link}, #{issue_link} and #{issue_link}.",
       # changesets
       'r1'                          => changeset_link,
+      'r1.'                         => "#{changeset_link}.",
+      'r1, r2'                      => "#{changeset_link}, #{changeset_link2}",
+      'r1,r2'                       => "#{changeset_link},#{changeset_link2}",
       # documents
       'document#1'                  => document_link,
       'document:"Test document"'    => document_link,
@@ -238,7 +258,29 @@ class ApplicationHelperTest < HelperTestCase
     to_test.each { |text, result| assert_equal result, textilizable(text) }
   end
   
-  def syntax_highlight
+  def test_pre_tags
+    raw = <<-RAW
+Before
+
+<pre>
+<prepared-statement-cache-size>32</prepared-statement-cache-size>
+</pre>
+
+After
+RAW
+
+    expected = <<-EXPECTED
+<p>Before</p>
+<pre>
+&lt;prepared-statement-cache-size&gt;32&lt;/prepared-statement-cache-size&gt;
+</pre>
+<p>After</p>
+EXPECTED
+    
+    assert_equal expected.gsub(%r{[\r\n\t]}, ''), textilizable(raw).gsub(%r{[\r\n\t]}, '')
+  end
+  
+  def test_syntax_highlight
     raw = <<-RAW
 <pre><code class="ruby">
 # Some ruby code here
@@ -391,6 +433,45 @@ EXPECTED
     assert_equal expected.gsub(%r{\s+}, ''), textilizable(raw).gsub(%r{\s+}, '')
   end
   
+  def test_table_with_line_breaks
+    raw = <<-RAW
+This is a table with line breaks:
+
+|cell11
+continued|cell12||
+|-cell21-||cell23
+cell23 line2
+cell23 *line3*|
+|cell31|cell32
+cell32 line2|cell33|
+
+RAW
+
+    expected = <<-EXPECTED
+<p>This is a table with line breaks:</p>
+
+<table>
+  <tr>
+    <td>cell11<br />continued</td>
+    <td>cell12</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><del>cell21</del></td>
+    <td></td>
+    <td>cell23<br/>cell23 line2<br/>cell23 <strong>line3</strong></td>
+  </tr>
+  <tr>
+    <td>cell31</td>
+    <td>cell32<br/>cell32 line2</td>
+    <td>cell33</td>
+  </tr>
+</table>
+EXPECTED
+
+    assert_equal expected.gsub(%r{\s+}, ''), textilizable(raw).gsub(%r{\s+}, '')
+  end
+  
   def test_default_formatter
     Setting.text_formatting = 'unknown'
     text = 'a *link*: http://www.example.net/'
@@ -402,10 +483,10 @@ EXPECTED
     to_test = { Date.today => 'Due in 0 days',
                 Date.today + 1 => 'Due in 1 day',
                 Date.today + 100 => 'Due in about 3 months',
-                Date.today + 20000 => 'Due in over 55 years',
+                Date.today + 20000 => 'Due in over 54 years',
                 Date.today - 1 => '1 day late',
                 Date.today - 100 => 'about 3 months late',
-                Date.today - 20000 => 'over 55 years late',
+                Date.today - 20000 => 'over 54 years late',
                }
     to_test.each do |date, expected|
       assert_equal expected, due_date_distance_in_words(date)
@@ -423,5 +504,25 @@ EXPECTED
     # turn off avatars
     Setting.gravatar_enabled = '0'
     assert_nil avatar(User.find_by_mail('jsmith@somenet.foo'))
+  end
+  
+  def test_link_to_user
+    user = User.find(2)
+    t = link_to_user(user)
+    assert_equal "<a href=\"/users/2\">#{ user.name }</a>", t
+  end
+                                      
+  def test_link_to_user_should_not_link_to_locked_user
+    user = User.find(5)
+    assert user.locked?
+    t = link_to_user(user)
+    assert_equal user.name, t
+  end
+                                                                          
+  def test_link_to_user_should_not_link_to_anonymous
+    user = User.anonymous
+    assert user.anonymous?
+    t = link_to_user(user)
+    assert_equal ::I18n.t(:label_user_anonymous), t
   end
 end

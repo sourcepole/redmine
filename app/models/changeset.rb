@@ -89,7 +89,7 @@ class Changeset < ActiveRecord::Base
     if ref_keywords.delete('*')
       # find any issue ID in the comments
       target_issue_ids = []
-      comments.scan(%r{([\s\(,-]|^)#(\d+)(?=[[:punct:]]|\s|<|$)}).each { |m| target_issue_ids << m[1] }
+      comments.scan(%r{([\s\(\[,-]|^)#(\d+)(?=[[:punct:]]|\s|<|$)}).each { |m| target_issue_ids << m[1] }
       referenced_issues += repository.project.issues.find_all_by_id(target_issue_ids)
     end
     
@@ -112,6 +112,8 @@ class Changeset < ActiveRecord::Base
           journal = issue.init_journal(user || User.anonymous, ll(Setting.default_language, :text_status_changed_by_changeset, csettext))
           issue.status = fix_status
           issue.done_ratio = done_ratio if done_ratio
+          Redmine::Hook.call_hook(:model_changeset_scan_commit_for_issue_ids_pre_issue_update,
+                                  { :changeset => self, :issue => issue })
           issue.save
         end
       end

@@ -18,6 +18,7 @@
 require 'diff'
 
 class WikiController < ApplicationController
+  default_search_scope :wiki_pages
   before_filter :find_wiki, :authorize
   before_filter :find_existing_page, :only => [:rename, :protect, :history, :diff, :annotate, :add_attachment, :destroy]
   
@@ -25,6 +26,7 @@ class WikiController < ApplicationController
 
   helper :attachments
   include AttachmentsHelper   
+  helper :watchers
   
   # display a page (in editing mode if it doesn't exist)
   def index
@@ -82,6 +84,7 @@ class WikiController < ApplicationController
       @content.author = User.current
       # if page is new @page.save will also save content, but not if page isn't a new record
       if (@page.new_record? ? @page.save : @content.save)
+        call_hook(:controller_wiki_edit_after_save, { :params => params, :page => @page})
         redirect_to :action => 'index', :id => @project, :page => @page.title
       end
     end

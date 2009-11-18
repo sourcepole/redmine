@@ -38,14 +38,39 @@ class MailHandler < ActionMailer::Base
   end
   
   # Processes incoming emails
+  # Returns the created object (eg. an issue, a message) or false
   def receive(email)
     @email = email
-    @user = User.active.find_by_mail(email.from.to_a.first.to_s.strip)
-    unless @user
-      # Unknown user => the email is ignored
-      # TODO: ability to create the user's account
-      logger.info "MailHandler: email submitted by unknown user [#{email.from.first}]" if logger && logger.info
+    sender_email = email.from.to_a.first.to_s.strip
+    # Ignore emails received from the application emission address to avoid hell cycles
+    if sender_email.downcase == Setting.mail_from.to_s.strip.downcase
+      logger.info  "MailHandler: ignoring email from Redmine emission address [#{sender_email}]" if logger && logger.info
       return false
+    end
+    @user = User.find_by_mail(sender_email)
+    if @user && !@user.active?
+      logger.info  "MailHandler: ignoring email from non-active user [#{@user.login}]" if logger && logger.info
+      return false
+    end
+    if @user.nil?
+      # Email was submitted by an unknown user
+      case @@handler_options[:unknown_user]
+      when 'accept'
+        @user = User.anonymous
+      when 'create'
+        @user = MailHandler.create_user_from_email(email)
+        if @user
+          logger.info "MailHandler: [#{@user.login}] account created" if logger && logger.info
+          Mailer.deliver_account_information(@user, @user.password)
+        else
+          logger.error "MailHandler: could not create account for [#{sender_email}]" if logger && logger.error
+          return false
+        end
+      else
+        # Default behaviour, emails from unknown users are ignored
+        logger.info  "MailHandler: ignoring email from unknown user [#{sender_email}]" if logger && logger.info
+        return false
+      end
     end
     User.current = @user
     dispatch
@@ -54,15 +79,15 @@ class MailHandler < ActionMailer::Base
   private
 
   MESSAGE_ID_RE = %r{^<redmine\.([a-z0-9_]+)\-(\d+)\.\d+@}
-  ISSUE_REPLY_SUBJECT_RE = %r{\[[^\]]+#(\d+)\]}
-  MESSAGE_REPLY_SUBJECT_RE = %r{\[[^\]]+msg(\d+)\]}
+  ISSUE_REPLY_SUBJECT_RE = %r{\[[^\]]*#(\d+)\]}
+  MESSAGE_REPLY_SUBJECT_RE = %r{\[[^\]]*msg(\d+)\]}
   
   def dispatch
     headers = [email.in_reply_to, email.references].flatten.compact
     if headers.detect {|h| h.to_s =~ MESSAGE_ID_RE}
       klass, object_id = $1, $2.to_i
       method_name = "receive_#{klass}_reply"
-      if self.class.private_instance_methods.include?(method_name)
+      if self.class.private_instance_methods.collect(&:to_s).include?(method_name)
         send method_name, object_id
       else
         # ignoring it
@@ -91,7 +116,7 @@ class MailHandler < ActionMailer::Base
     project = target_project
     tracker = (get_keyword(:tracker) && project.trackers.find_by_name(get_keyword(:tracker))) || project.trackers.find(:first)
     category = (get_keyword(:category) && project.issue_categories.find_by_name(get_keyword(:category)))
-    priority = (get_keyword(:priority) && Enumeration.find_by_opt_and_name('IPRI', get_keyword(:priority)))
+    priority = (get_keyword(:priority) && IssuePriority.find_by_name(get_keyword(:priority)))
     status =  (get_keyword(:status) && IssueStatus.find_by_name(get_keyword(:status)))
 
     # check permission
@@ -101,7 +126,11 @@ class MailHandler < ActionMailer::Base
     if status && issue.new_statuses_allowed_to(user).include?(status)
       issue.status = status
     end
-    issue.subject = email.subject.chomp.toutf8
+    issue.subject = email.subject.chomp
+    issue.subject = issue.subject.toutf8 if issue.subject.respond_to?(:toutf8)
+    if issue.subject.blank?
+      issue.subject = '(no subject)'
+    end
     issue.description = plain_text_body
     # custom fields
     issue.custom_field_values = issue.available_custom_fields.inject({}) do |h, c|
@@ -205,7 +234,7 @@ class MailHandler < ActionMailer::Base
       @keywords[attr]
     else
       @keywords[attr] = begin
-        if (options[:override] || @@handler_options[:allow_override].include?(attr.to_s)) && plain_text_body.gsub!(/^#{attr}:[ \t]*(.+)\s*$/i, '')
+        if (options[:override] || @@handler_options[:allow_override].include?(attr.to_s)) && plain_text_body.gsub!(/^#{attr}[ \t]*:[ \t]*(.+)\s*$/i, '')
           $1.strip
         elsif !@@handler_options[:issue][attr].blank?
           @@handler_options[:issue][attr]
@@ -238,5 +267,24 @@ class MailHandler < ActionMailer::Base
 
   def self.full_sanitizer
     @full_sanitizer ||= HTML::FullSanitizer.new
+  end
+  
+  # Creates a user account for the +email+ sender
+  def self.create_user_from_email(email)
+    addr = email.from_addrs.to_a.first
+    if addr && !addr.spec.blank?
+      user = User.new
+      user.mail = addr.spec
+      
+      names = addr.name.blank? ? addr.spec.gsub(/@.*$/, '').split('.') : addr.name.split
+      user.firstname = names.shift
+      user.lastname = names.join(' ')
+      user.lastname = '-' if user.lastname.blank?
+      
+      user.login = user.mail
+      user.password = ActiveSupport::SecureRandom.hex(5)
+      user.language = Setting.default_language
+      user.save ? user : nil
+    end
   end
 end

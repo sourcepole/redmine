@@ -17,6 +17,7 @@
 
 class MessagesController < ApplicationController
   menu_item :boards
+  default_search_scope :messages
   before_filter :find_board, :only => [:new, :preview]
   before_filter :find_message, :except => [:new, :preview]
   before_filter :authorize, :except => [:preview, :edit, :destroy]
@@ -46,6 +47,7 @@ class MessagesController < ApplicationController
       @message.sticky = params[:message]['sticky']
     end
     if request.post? && @message.save
+      call_hook(:controller_messages_new_after_save, { :params => params, :message => @message})
       attach_files(@message, params[:attachments])
       redirect_to :action => 'show', :id => @message
     end
@@ -58,6 +60,7 @@ class MessagesController < ApplicationController
     @reply.board = @board
     @topic.children << @reply
     if !@reply.new_record?
+      call_hook(:controller_messages_reply_after_save, { :params => params, :message => @reply})
       attach_files(@reply, params[:attachments])
     end
     redirect_to :action => 'show', :id => @topic
@@ -90,9 +93,12 @@ class MessagesController < ApplicationController
   def quote
     user = @message.author
     text = @message.content
+    subject = @message.subject.gsub('"', '\"')
+    subject = "RE: #{subject}" unless subject.starts_with?('RE:')
     content = "#{ll(Setting.default_language, :text_user_wrote, user)}\\n> "
     content << text.to_s.strip.gsub(%r{<pre>((.|\s)*?)</pre>}m, '[...]').gsub('"', '\"').gsub(/(\r?\n|\r\n?)/, "\\n> ") + "\\n\\n"
     render(:update) { |page|
+      page << "$('reply_subject').value = \"#{subject}\";"
       page.<< "$('message_content').value = \"#{content}\";"
       page.show 'reply'
       page << "Form.Element.focus('message_content');"

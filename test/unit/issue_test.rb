@@ -17,24 +17,25 @@
 
 require File.dirname(__FILE__) + '/../test_helper'
 
-class IssueTest < Test::Unit::TestCase
-  fixtures :projects, :users, :members, :member_roles,
+class IssueTest < ActiveSupport::TestCase
+  fixtures :projects, :users, :members, :member_roles, :roles,
            :trackers, :projects_trackers,
-           :issue_statuses, :issue_categories,
+           :versions,
+           :issue_statuses, :issue_categories, :issue_relations, :workflows, 
            :enumerations,
            :issues,
            :custom_fields, :custom_fields_projects, :custom_fields_trackers, :custom_values,
            :time_entries
 
   def test_create
-    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => Enumeration.priorities.first, :subject => 'test_create', :description => 'IssueTest#test_create', :estimated_hours => '1:30')
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => IssuePriority.all.first, :subject => 'test_create', :description => 'IssueTest#test_create', :estimated_hours => '1:30')
     assert issue.save
     issue.reload
     assert_equal 1.5, issue.estimated_hours
   end
   
   def test_create_minimal
-    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => Enumeration.priorities.first, :subject => 'test_create')
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => IssuePriority.all.first, :subject => 'test_create')
     assert issue.save
     assert issue.description.nil?
   end
@@ -61,6 +62,47 @@ class IssueTest < Test::Unit::TestCase
     assert issue.save
     issue.reload
     assert_equal 'PostgreSQL', issue.custom_value_for(field).value
+  end
+  
+  def test_visible_scope_for_anonymous
+    # Anonymous user should see issues of public projects only
+    issues = Issue.visible(User.anonymous).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| !issue.project.is_public?}
+    # Anonymous user should not see issues without permission
+    Role.anonymous.remove_permission!(:view_issues)
+    issues = Issue.visible(User.anonymous).all
+    assert issues.empty?
+  end
+  
+  def test_visible_scope_for_user
+    user = User.find(9)
+    assert user.projects.empty?
+    # Non member user should see issues of public projects only
+    issues = Issue.visible(user).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| !issue.project.is_public?}
+    # Non member user should not see issues without permission
+    Role.non_member.remove_permission!(:view_issues)
+    user.reload
+    issues = Issue.visible(user).all
+    assert issues.empty?
+    # User should see issues of projects for which he has view_issues permissions only
+    Member.create!(:principal => user, :project_id => 2, :role_ids => [1])
+    user.reload
+    issues = Issue.visible(user).all
+    assert issues.any?
+    assert_nil issues.detect {|issue| issue.project_id != 2}
+  end
+  
+  def test_visible_scope_for_admin
+    user = User.find(1)
+    user.members.each(&:destroy)
+    assert user.projects.empty?
+    issues = Issue.visible(user).all
+    assert issues.any?
+    # Admin should see issues on private projects that he does not belong to
+    assert issues.detect {|issue| !issue.project.is_public?}
   end
   
   def test_errors_full_messages_should_include_custom_fields_errors
@@ -123,7 +165,7 @@ class IssueTest < Test::Unit::TestCase
   end
   
   def test_category_based_assignment
-    issue = Issue.create(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => Enumeration.priorities.first, :subject => 'Assignment test', :description => 'Assignment test', :category_id => 1)
+    issue = Issue.create(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => IssuePriority.all.first, :subject => 'Assignment test', :description => 'Assignment test', :category_id => 1)
     assert_equal IssueCategory.find(1).assigned_to, issue.assigned_to
   end
   
@@ -136,10 +178,20 @@ class IssueTest < Test::Unit::TestCase
     assert_equal orig.tracker, issue.tracker
     assert_equal orig.custom_values.first.value, issue.custom_values.first.value
   end
+
+  def test_copy_should_copy_status
+    orig = Issue.find(8)
+    assert orig.status != IssueStatus.default
+    
+    issue = Issue.new.copy_from(orig)
+    assert issue.save
+    issue.reload
+    assert_equal orig.status, issue.status
+  end
   
   def test_should_close_duplicates
     # Create 3 issues
-    issue1 = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :priority => Enumeration.priorities.first, :subject => 'Duplicates test', :description => 'Duplicates test')
+    issue1 = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :priority => IssuePriority.all.first, :subject => 'Duplicates test', :description => 'Duplicates test')
     assert issue1.save
     issue2 = issue1.clone
     assert issue2.save
@@ -166,7 +218,7 @@ class IssueTest < Test::Unit::TestCase
   
   def test_should_not_close_duplicated_issue
     # Create 3 issues
-    issue1 = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :priority => Enumeration.priorities.first, :subject => 'Duplicates test', :description => 'Duplicates test')
+    issue1 = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :priority => IssuePriority.all.first, :subject => 'Duplicates test', :description => 'Duplicates test')
     assert issue1.save
     issue2 = issue1.clone
     assert issue2.save
@@ -182,6 +234,56 @@ class IssueTest < Test::Unit::TestCase
     assert issue2.save
     # 1 should not be also closed
     assert !issue1.reload.closed?
+  end
+  
+  def test_assignable_versions
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 1, :subject => 'New issue')
+    assert_equal ['open'], issue.assignable_versions.collect(&:status).uniq
+  end
+  
+  def test_should_not_be_able_to_assign_a_new_issue_to_a_closed_version
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 1, :subject => 'New issue')
+    assert !issue.save
+    assert_not_nil issue.errors.on(:fixed_version_id)
+  end
+  
+  def test_should_not_be_able_to_assign_a_new_issue_to_a_locked_version
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 2, :subject => 'New issue')
+    assert !issue.save
+    assert_not_nil issue.errors.on(:fixed_version_id)
+  end
+  
+  def test_should_be_able_to_assign_a_new_issue_to_an_open_version
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 1, :status_id => 1, :fixed_version_id => 3, :subject => 'New issue')
+    assert issue.save
+  end
+  
+  def test_should_be_able_to_update_an_issue_assigned_to_a_closed_version
+    issue = Issue.find(11)
+    assert_equal 'closed', issue.fixed_version.status
+    issue.subject = 'Subject changed'
+    assert issue.save
+  end
+  
+  def test_should_not_be_able_to_reopen_an_issue_assigned_to_a_closed_version
+    issue = Issue.find(11)
+    issue.status_id = 1
+    assert !issue.save
+    assert_not_nil issue.errors.on_base
+  end
+  
+  def test_should_be_able_to_reopen_and_reassign_an_issue_assigned_to_a_closed_version
+    issue = Issue.find(11)
+    issue.status_id = 1
+    issue.fixed_version_id = 3
+    assert issue.save
+  end
+  
+  def test_should_be_able_to_reopen_an_issue_assigned_to_a_locked_version
+    issue = Issue.find(12)
+    assert_equal 'locked', issue.fixed_version.status
+    issue.status_id = 1
+    assert issue.save
   end
   
   def test_move_to_another_project_with_same_category
@@ -234,6 +336,32 @@ class IssueTest < Test::Unit::TestCase
     assert_nil TimeEntry.find_by_issue_id(1)
   end
   
+  def test_blocked
+    blocked_issue = Issue.find(9)
+    blocking_issue = Issue.find(10)
+     
+    assert blocked_issue.blocked?
+    assert !blocking_issue.blocked?
+  end
+  
+  def test_blocked_issues_dont_allow_closed_statuses
+    blocked_issue = Issue.find(9)
+  
+    allowed_statuses = blocked_issue.new_statuses_allowed_to(users(:users_002))
+    assert !allowed_statuses.empty?
+    closed_statuses = allowed_statuses.select {|st| st.is_closed?}
+    assert closed_statuses.empty?
+  end
+  
+  def test_unblocked_issues_allow_closed_statuses
+    blocking_issue = Issue.find(10)
+  
+    allowed_statuses = blocking_issue.new_statuses_allowed_to(users(:users_002))
+    assert !allowed_statuses.empty?
+    closed_statuses = allowed_statuses.select {|st| st.is_closed?}
+    assert !closed_statuses.empty?
+  end
+  
   def test_overdue
     assert Issue.new(:due_date => 1.day.ago.to_date).overdue?
     assert !Issue.new(:due_date => Date.today).overdue?
@@ -248,7 +376,7 @@ class IssueTest < Test::Unit::TestCase
   
   def test_create_should_send_email_notification
     ActionMailer::Base.deliveries.clear
-    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => Enumeration.priorities.first, :subject => 'test_create', :estimated_hours => '1:30')
+    issue = Issue.new(:project_id => 1, :tracker_id => 1, :author_id => 3, :status_id => 1, :priority => IssuePriority.all.first, :subject => 'test_create', :estimated_hours => '1:30')
 
     assert issue.save
     assert_equal 1, ActionMailer::Base.deliveries.size

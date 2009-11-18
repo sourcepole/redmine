@@ -41,7 +41,7 @@ class IssuesTest < ActionController::IntegrationTest
     
     post 'projects/1/issues', :tracker_id => "1",
                                  :issue => { :start_date => "2006-12-26", 
-                                             :priority_id => "3", 
+                                             :priority_id => "4", 
                                              :subject => "new test issue", 
                                              :category_id => "", 
                                              :description => "new issue", 
@@ -71,7 +71,7 @@ class IssuesTest < ActionController::IntegrationTest
 
     post 'issues/1/edit',
          :notes => 'Some notes',
-         :attachments => {'1' => {'file' => test_uploaded_file('testfile.txt', 'text/plain'), 'description' => 'This is an attachment'}}
+         :attachments => {'1' => {'file' => uploaded_test_file('testfile.txt', 'text/plain'), 'description' => 'This is an attachment'}}
     assert_redirected_to "issues/1"
     
     # make sure attachment was saved
